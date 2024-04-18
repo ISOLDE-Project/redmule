@@ -179,3 +179,16 @@ hw-build: $(VSIM_DIR)
 sw-all: sw-clean sw-build
 
 hw-all: hw-clean hw-build
+
+scripts/sources.tcl:  Bender.yml Makefile
+	$(BENDER) script vivado      \
+	$(common_targs) $(common_defs) \
+	$(synth_targs) $(synth_defs)   \
+	> $@
+
+.PHONY: vivado_lint
+
+vivado_lint: scripts/sources.tcl
+	rm -rf vivado && mkdir -p vivado
+	@echo "synth_design -rtl -rtl_skip_mlo -name rtl_1" >scripts/launch_runs.tcl
+	vivado -mode batch -source ./scripts/create_project.tcl ./scripts/launch_runs.tcl | tee vivado.log

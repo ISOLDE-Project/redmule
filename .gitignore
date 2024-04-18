@@ -1,0 +1,17 @@
+.bender/
+.vscode/
+__pycache__
+
+// Modelsim Fiels
+*.wlf
+modelsim.ini
+*stacktrace*
+transcript
+
+gmon.out
+
+ *.log
+scripts/launch_runs.tcl
+scripts/sources.tcl
+vivado*.*
+vivado/
