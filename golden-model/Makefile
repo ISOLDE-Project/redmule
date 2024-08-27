@@ -33,13 +33,17 @@ K ?= 3
 # FP format
 fp_fmt ?= FP16
 
-check_penv:
+check_sw:
+	mkdir -p $(SW)
+
+check_penv: check_sw
 ifndef PENV
-	$(error PENV is undefined. Make sure to export       \
-	PENV=<absolute_path_your_pythonenv> before continue.)
+	$(error PENV is undefined. Make sure to export \
+	PENV=<absolute_path_your_pythonenv> before continuing.)
+else
 	python3 -m venv $(PENV)
-	source .venv/bin/activate
-	pip3 install numpy
+	. $(PENV)/bin/activate && \
+	pip3 install numpy && \
 	pip3 install torch
 endif
 

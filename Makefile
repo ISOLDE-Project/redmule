@@ -29,7 +29,7 @@ WAVES          ?= $(mkfile_path)/wave.do
 ISA            ?= riscv
 ARCH           ?= rv
 XLEN           ?= 32
-XTEN           ?= imc
+XTEN           ?= imc_zicsr
 
 compile_script ?= scripts/compile.tcl
 compile_flag   ?= -suppress 2583 -suppress 13314
@@ -48,11 +48,11 @@ FLAGS += -DVERBOSE
 endif
 
 # Setup toolchain (from SDK) and options
-CC=$(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(ISA)$(XLEN)-unknown-elf-gcc
-LD=$(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(ISA)$(XLEN)-unknown-elf-gcc
+CC=$(ISA)$(XLEN)-unknown-elf-gcc
+LD=$(ISA)$(XLEN)-unknown-elf-gcc
 OBJDUMP=$(ISA)$(XLEN)-unknown-elf-objdump
-CC_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -D__$(ISA)__ -O2 -g -Wextra -Wall -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wundef -fdata-sections -ffunction-sections -MMD -MP
-LD_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -D__$(ISA)__ -MMD -MP -nostartfiles -nostdlib -Wl,--gc-sections
+CC_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -mabi=ilp32 -D__$(ISA)__ -O2 -g -Wextra -Wall -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wundef -fdata-sections -ffunction-sections -MMD -MP
+LD_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -mabi=ilp32 -D__$(ISA)__ -MMD -MP -nostartfiles -nostdlib -Wl,--gc-sections
 
 # Setup build object dirs
 CRT=$(BUILD_DIR)/crt0.o
@@ -90,7 +90,7 @@ $(BUILD_DIR):
 SHELL := /bin/bash
 
 # Generate instructions and data stimuli
-all: $(STIM_INSTR) $(STIM_DATA) dis
+sw-build: $(STIM_INSTR) $(STIM_DATA) dis
 
 # Run the simulation
 run: $(CRT)
