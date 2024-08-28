@@ -10,3 +10,4 @@ logs/
 sw/inc/
 riscv-isa-sim/
 *.txt
+bin/

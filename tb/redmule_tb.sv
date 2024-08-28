@@ -19,7 +19,10 @@ timeunit 1ps;
 timeprecision 1ps;
 import hci_package::*;
 
-module redmule_tb;
+module redmule_tb (
+    input logic clk,
+    input logic rst_n
+);
 
   // parameters
   parameter int unsigned PROB_STALL = 0;
@@ -34,17 +37,17 @@ module redmule_tb;
   parameter int unsigned PULP_ZFINX = 0;
   parameter logic [31:0] BASE_ADDR = 32'h1c000000;
   parameter logic [31:0] HWPE_ADDR_BASE_BIT = 20;
-  parameter string STIM_INSTR = "../../stim_instr.txt";
-  parameter string STIM_DATA  = "../../stim_data.txt";
+  parameter string STIM_INSTR = "work/stim_instr.txt";
+  parameter string STIM_DATA  = "work/stim_data.txt";
   parameter bit USE_ECC = 0;
   parameter int unsigned EW = (USE_ECC) ? 72 : DEFAULT_EW;
 
   // global signals
-  logic clk;
-  logic rst_n;
+  // logic clk;
+  // logic rst_n;
   logic test_mode;
   logic fetch_enable;
-  logic [31:0] core_boot_addr;
+  logic [31:0] core_boot_addr = 32'h1C000084;
   logic redmule_busy;
 
   hwpe_stream_intf_tcdm instr[0:0]  (.clk(clk));
@@ -99,27 +102,27 @@ module redmule_tb;
   localparam TA  = 0.2ns; // application time
   localparam TT  = 0.8ns; // test time
 
-  // Performs one entire clock cycle.
-  task cycle;
-    clk <= #(TCP/2) 0;
-    clk <= #TCP 1;
-    #TCP;
-  endtask
+  // // Performs one entire clock cycle.
+  // task cycle;
+  //   clk <= #(TCP/2) 0;
+  //   clk <= #TCP 1;
+  //   #TCP;
+  // endtask
 
   // The following task schedules the clock edges for the next cycle and
   // advances the simulation time to that cycles test time (localparam TT)
   // according to ATI timings.
-  task cycle_start;
-    clk <= #(TCP/2) 0;
-    clk <= #TCP 1;
-    #TT;
-  endtask
+  // task cycle_start;
+  //   clk <= #(TCP/2) 0;
+  //   clk <= #TCP 1;
+  //   #TT;
+  // endtask
 
-  // The following task finishes a clock cycle previously started with
-  // cycle_start by advancing the simulation time to the end of the cycle.
-  task cycle_end;
-    #(TCP-TT);
-  endtask
+  // // The following task finishes a clock cycle previously started with
+  // // cycle_start by advancing the simulation time to the end of the cycle.
+  // task cycle_end;
+  //   #(TCP-TT);
+  // endtask
 
   // bindings
   always_comb
@@ -381,24 +384,25 @@ module redmule_tb;
   );
 
   initial begin
-    clk <= 1'b0;
-    rst_n <= 1'b0;
-    core_boot_addr = 32'h0;
-    for (int i = 0; i < 20; i++)
-      cycle();
-    rst_n <= #TA 1'b1;
+  //   clk <= 1'b0;
+  //   rst_n <= 1'b0;
+  //   core_boot_addr = 32'h0;
+  //   for (int i = 0; i < 20; i++)
+  //     cycle();
+  //   rst_n <= #TA 1'b1;
+  $display("[%0t] Model running...\n", $time);
     core_boot_addr = 32'h1C000084;
 
-    for (int i = 0; i < 10; i++)
-      cycle();
-    rst_n <= #TA 1'b0;
-    for (int i = 0; i < 10; i++)
-      cycle();
-    rst_n <= #TA 1'b1;
+    // for (int i = 0; i < 10; i++)
+    //   cycle();
+    // rst_n <= #TA 1'b0;
+    // for (int i = 0; i < 10; i++)
+    //   cycle();
+    // rst_n <= #TA 1'b1;
 
-    while(1) begin
-      cycle();
-    end
+    // while(1) begin
+    //   cycle();
+    // end
 
   end
   
@@ -424,8 +428,8 @@ module redmule_tb;
     test_mode = 1'b0;
     fetch_enable = 1'b0;
 
-    f_t0 = $fopen("time_start.txt");
-    f_t1 = $fopen("time_stop.txt");
+    //f_t0 = $fopen("time_start.txt");
+    //f_t1 = $fopen("time_stop.txt");
 
     // load instruction memory
     $readmemh(STIM_INSTR, redmule_tb.i_dummy_imemory.memory);
