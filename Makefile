@@ -18,7 +18,7 @@
 # Top-level Makefile
 
 # Paths to folders
-mkfile_path    := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
+mkfile_path    := $(shell git rev-parse --show-toplevel)
 SW             ?= $(mkfile_path)/sw
 BUILD_DIR      ?= $(mkfile_path)/work
 QUESTA         ?= questa-2019.3-kgf
@@ -30,6 +30,17 @@ ISA            ?= riscv
 ARCH           ?= rv
 XLEN           ?= 32
 XTEN           ?= imc_zicsr
+
+
+TARGET       = redmule
+
+#########################
+# Files and directories #
+#########################
+BIN_DIR              ?= bin
+
+
+include $(mkfile_path)/Makefrag.verilator
 
 compile_script ?= scripts/compile.tcl
 compile_flag   ?= -suppress 2583 -suppress 13314
@@ -48,41 +59,37 @@ FLAGS += -DVERBOSE
 endif
 
 # Setup toolchain (from SDK) and options
-CC=$(ISA)$(XLEN)-unknown-elf-gcc
-LD=$(ISA)$(XLEN)-unknown-elf-gcc
-OBJDUMP=$(ISA)$(XLEN)-unknown-elf-objdump
-CC_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -mabi=ilp32 -D__$(ISA)__ -O2 -g -Wextra -Wall -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wundef -fdata-sections -ffunction-sections -MMD -MP
-LD_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -mabi=ilp32 -D__$(ISA)__ -MMD -MP -nostartfiles -nostdlib -Wl,--gc-sections
+RV_CC=$(ISA)$(XLEN)-unknown-elf-gcc
+RV_LD=$(ISA)$(XLEN)-unknown-elf-gcc
+RV_OBJDUMP=$(ISA)$(XLEN)-unknown-elf-objdump
+RV_CC_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -mabi=ilp32 -D__$(ISA)__ -O2 -g -Wextra -Wall -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wundef -fdata-sections -ffunction-sections -MMD -MP
+RV_LD_OPTS=-march=$(ARCH)$(XLEN)$(XTEN) -mabi=ilp32 -D__$(ISA)__ -MMD -MP -nostartfiles -nostdlib -Wl,--gc-sections
 
 # Setup build object dirs
 CRT=$(BUILD_DIR)/crt0.o
-OBJ=$(BUILD_DIR)/$(TEST_SRCS)/verif.o
-BIN=$(BUILD_DIR)/$(TEST_SRCS)/verif
-DUMP=$(BUILD_DIR)/$(TEST_SRCS)/verif.dump
-STIM_INSTR=$(BUILD_DIR)/$(TEST_SRCS)/stim_instr.txt
-STIM_DATA=$(BUILD_DIR)/$(TEST_SRCS)/stim_data.txt
-VSIM_INI=$(BUILD_DIR)/$(TEST_SRCS)/modelsim.ini
-VSIM_LIBS=$(BUILD_DIR)/$(TEST_SRCS)/work
+OBJ=$(BUILD_DIR)/verif.o
+BIN=$(BUILD_DIR)/verif
+DUMP=$(BUILD_DIR)/verif.dump
+STIM_INSTR=$(BUILD_DIR)/stim_instr.txt
+STIM_DATA=$(BUILD_DIR)/stim_data.txt
+
+
 
 # Build implicit rules
 $(STIM_INSTR) $(STIM_DATA): $(BIN)
 	objcopy --srec-len 1 --output-target=srec $(BIN) $(BIN).s19
 	sw/parse_s19.pl $(BIN).s19 > $(BIN).txt
 	python sw/s19tomem.py $(BIN).txt $(STIM_INSTR) $(STIM_DATA)
-	ln -sfn $(INI_PATH) $(VSIM_INI)
-	ln -sfn $(WORK_PATH) $(VSIM_LIBS)
+
 
 $(BIN): $(CRT) $(OBJ) sw/link.ld
-	$(LD) $(LD_OPTS) -o $(BIN) $(CRT) $(OBJ) -Tsw/link.ld
+	$(RV_LD) $(RV_LD_OPTS) -o $(BIN) $(CRT) $(OBJ) -Tsw/link.ld
 
 $(CRT): $(BUILD_DIR) sw/crt0.S
-	$(CC) $(CC_OPTS) -c sw/crt0.S -o $(CRT)
+	$(RV_CC) $(RV_CC_OPTS) -c sw/crt0.S -o $(CRT)
 
-$(OBJ): $(TEST_SRCS) $(BUILD_DIR)/$(TEST_SRCS)
-	$(CC) $(CC_OPTS) -c $(TEST_SRCS) $(FLAGS) -Isw -o $(OBJ)
-
-$(BUILD_DIR)/$(TEST_SRCS):
-	mkdir -p $(BUILD_DIR)/$(TEST_SRCS)
+$(OBJ): $(TEST_SRCS)
+	$(RV_CC) $(RV_CC_OPTS) -c $(TEST_SRCS) $(FLAGS) -Isw -o $(OBJ)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -141,7 +148,7 @@ clean:
 	rm -rf $(BUILD_DIR)/$(TEST_SRCS)
 
 dis:
-	$(OBJDUMP) -d $(BIN) > $(DUMP)
+	$(RV_OBJDUMP) -d $(BIN) > $(DUMP)
 
 OP     ?= gemm
 fp_fmt ?= FP16
@@ -183,3 +190,59 @@ hw-clean:
 	rm -rf modelsim.ini
 
 hw-all: hw-clean hw-lib hw-compile hw-opt
+
+#############
+# Verilator #
+#############
+
+###############
+# C testbench #
+###############
+
+
+
+
+VLT_CC_SOURCES += \
+	${TB_DIR}/Sim.cc \
+	${TB_DIR}/sim_main.cc
+
+VLT_TOP_MODULE = redmule_tb
+
+.PHONY: clean-vlt clean-generated
+
+# Clean all build directories and temporary files for Questasim simulation
+clean-vlt: 
+	rm -fr $(VLT_BUILDDIR)
+	rm -fv $(BIN_DIR)/$(TARGET).vlt
+
+clean-generated:
+	rm -rf generated
+generate: $(GENERATED_DIR)/snitch_cluster_wrapper.sv $(GENERATED_DIR)/bootdata.cc
+	@echo done
+	
+$(VLT_BUILDDIR)/files: Bender.yml
+	mkdir -p $(dir $@)
+	$(BENDER) script verilator $(VLT_BENDER) >$@
+	touch $@
+
+$(BIN_DIR)/$(TARGET).vlt: $(VLT_BUILDDIR)/files  ${VLT_CC_SOURCES} riscv-isa-sim/lib/libfesvr.a
+	mkdir -p $(dir $@)
+	$(VLT) $(VLT_FLAGS) -Mdir $(VLT_BUILDDIR) \
+		-f $(VLT_BUILDDIR)/files \
+		-CFLAGS "$(VLT_CFLAGS)" \
+		-LDFLAGS "-L${mkfile_path}/riscv-isa-sim/lib -lfesvr -lpthread" \
+		-o ../$@ --top-module $(VLT_TOP_MODULE)  $(VLT_CC_SOURCES)
+	$(MAKE) -C $(VLT_BUILDDIR) -j $(shell nproc) -f V${VLT_TOP_MODULE}.mk
+
+run-test: $(BIN_DIR)/$(TARGET).vlt
+	$(BIN_DIR)/$(TARGET).vlt 
+
+.PHONY: help
+
+help:
+	@echo "available targets:"
+	@echo $(VLT_FESVR)/${FESVR_VERSION}_unzip
+	@echo riscv-isa-sim/lib/libfesvr.a
+	@echo $(BIN_DIR)/$(TARGET).vlt
+	@echo $(VLT_BUILDDIR)/files
+	@echo $(BIN)

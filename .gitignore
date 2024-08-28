@@ -4,3 +4,9 @@ golden-model/gemm/
 golden-model/venv/
 install
 work/
+work-vlt/
+logs/
+.bender/
+sw/inc/
+riscv-isa-sim/
+*.txt
