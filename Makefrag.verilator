@@ -22,6 +22,7 @@ VLT_FESVR     = $(mkfile_path)/riscv-isa-sim
 VLT_FLAGS    += --cc
 VLT_FLAGS    += --exe 
 VLT_FLAGS    += --trace
+VLT_FLAGS    += -DVERILATOR
 VLT_FLAGS    += -Wno-BLKANDNBLK
 VLT_FLAGS    += -Wno-LITENDIAN
 VLT_FLAGS    += -Wno-CASEINCOMPLETE

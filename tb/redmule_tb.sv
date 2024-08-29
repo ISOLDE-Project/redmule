@@ -383,28 +383,7 @@ module redmule_tb (
     .core_sleep_o        ( core_sleep   )
   );
 
-  initial begin
-  //   clk <= 1'b0;
-  //   rst_n <= 1'b0;
-  //   core_boot_addr = 32'h0;
-  //   for (int i = 0; i < 20; i++)
-  //     cycle();
-  //   rst_n <= #TA 1'b1;
-  $display("[%0t] Model running...\n", $time);
-    core_boot_addr = 32'h1C000084;
 
-    // for (int i = 0; i < 10; i++)
-    //   cycle();
-    // rst_n <= #TA 1'b0;
-    // for (int i = 0; i < 10; i++)
-    //   cycle();
-    // rst_n <= #TA 1'b1;
-
-    // while(1) begin
-    //   cycle();
-    // end
-
-  end
   
   integer f_t0, f_t1;
   integer f_x, f_W, f_y, f_tau;
@@ -415,6 +394,7 @@ module redmule_tb (
   begin
     if((data_addr == 32'h80000000 ) && (data_we & data_req == 1'b1)) begin
       errors = data_wdata;
+      $display("[%0t] data_addr = 0x%h, data_wdata = 0x%h\n", $time, data_addr,data_wdata);
     end
     if((data_addr == 32'h80000004 ) && (data_we & data_req == 1'b1)) begin
       $write("%c", data_wdata);
@@ -428,20 +408,24 @@ module redmule_tb (
     test_mode = 1'b0;
     fetch_enable = 1'b0;
 
-    //f_t0 = $fopen("time_start.txt");
-    //f_t1 = $fopen("time_stop.txt");
+    core_boot_addr = 32'h1C000084;
+    $display("[%0t] Model running... core_boot_addr = 0x%h\n", $time, core_boot_addr);
 
     // load instruction memory
     $readmemh(STIM_INSTR, redmule_tb.i_dummy_imemory.memory);
     $readmemh(STIM_DATA,  redmule_tb.i_dummy_dmemory.memory);
 
-    #(100*TCP);
+    //#(100*TCP);
+    do @(posedge clk); while (!rst_n);
     fetch_enable = 1'b1;
 
-    #(100*TCP);
-    // end WFI + returned != -1 signals end-of-computation
-    while(~core_sleep || errors==-1)
-      #(TCP);
+    //#(100*TCP);
+     repeat (100) @(posedge clk);
+     $display("[%0t] Core status: rst_n = %b, fetch_enable = %b, core_sleep = %b \n", $time, rst_n,fetch_enable,core_sleep);
+    // // end WFI + returned != -1 signals end-of-computation
+    // // while(~core_sleep || errors==-1)
+    // //   #(TCP);
+    do @(posedge clk); while(~core_sleep || errors==-1);
     cnt_rd = redmule_tb.i_dummy_dmemory.cnt_rd[0] + redmule_tb.i_dummy_dmemory.cnt_rd[1] + redmule_tb.i_dummy_dmemory.cnt_rd[2] + redmule_tb.i_dummy_dmemory.cnt_rd[3] + redmule_tb.i_dummy_dmemory.cnt_rd[4] + redmule_tb.i_dummy_dmemory.cnt_rd[5] + redmule_tb.i_dummy_dmemory.cnt_rd[6] + redmule_tb.i_dummy_dmemory.cnt_rd[7] + redmule_tb.i_dummy_dmemory.cnt_rd[8];
     cnt_wr = redmule_tb.i_dummy_dmemory.cnt_wr[0] + redmule_tb.i_dummy_dmemory.cnt_wr[1] + redmule_tb.i_dummy_dmemory.cnt_wr[2] + redmule_tb.i_dummy_dmemory.cnt_wr[3] + redmule_tb.i_dummy_dmemory.cnt_wr[4] + redmule_tb.i_dummy_dmemory.cnt_wr[5] + redmule_tb.i_dummy_dmemory.cnt_wr[6] + redmule_tb.i_dummy_dmemory.cnt_wr[7] + redmule_tb.i_dummy_dmemory.cnt_wr[8];
     $display("cnt_rd=%-8d", cnt_rd);

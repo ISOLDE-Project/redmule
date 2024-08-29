@@ -14,7 +14,8 @@ double sc_time_stamp() { return 0; }
 
 int main(int argc, char **argv) {
 
-  uint32_t timeOut{429496}; /*picoseconds*/
+ // uint32_t timeOut{429496}; /*picoseconds*/
+  uint32_t timeOut{107374}; /*picoseconds*/
   auto sim = std::make_unique<ISOLDE::Sim>(argc, argv);
   return sim->main( timeOut);
 }

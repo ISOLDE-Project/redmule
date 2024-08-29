@@ -248,6 +248,7 @@ int redmule8_compare_int(uint32_t *actual_z, uint32_t *golden_z, int len) {
 
 int main() {
 
+ *(int *) 0x80000000 = 0xACE;
   uint16_t m_size = M_SIZE;
   uint16_t n_size = N_SIZE;
   uint16_t k_size = K_SIZE;
