@@ -1,0 +1,14 @@
+golden-model/FP16/net_parameters.h
+golden-model/FP16/scripts/__pycache__/
+golden-model/gemm/
+golden-model/venv/
+install
+work/
+work-vlt/
+logs/
+.bender/
+sw/inc/
+riscv-isa-sim/
+*.txt
+bin/
+sw/build/
