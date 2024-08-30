@@ -51,13 +51,13 @@ int main() {
               (uint8_t)gemm_ops, float_fmt);
 
   // Start RedMulE operation and sleeping until the end of computation
-  printf("Triggering accelerator and going to sleep...\n");
+  //printf("Triggering accelerator and going to sleep...\n");
   hwpe_trigger_job();
 
   asm volatile("wfi" ::: "memory");
 
   // At the end of accelerator's computation, we resume and check on results
-  printf("Resumed!\n");
+  //printf("Resumed!\n");
 
   // Disable RedMulE
   hwpe_cg_disable();
@@ -69,7 +69,7 @@ int main() {
 
   *(int *)0x80000000 = errors;
 
-  tfp_printf("Terminated test with %d errors. See you!\n", errors);
+  //tfp_printf("Terminated test with %d errors. See you!\n", errors);
 
   return errors;
 }

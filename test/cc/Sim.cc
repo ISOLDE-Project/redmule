@@ -36,13 +36,11 @@ int Sim::main( uint32_t timeOut /*picoseconds*/) {
   Verilated::mkdir("logs");
   tfp->open("logs/sim.vcd");
 
-  bool endOfTestSequence = false;
   top->clk = 0;
-  top->rst_n = 0;
   contextp->time(0);
-  int hold_reset = 10;
-  // Simulate until $finish
-  while (!contextp->gotFinish() && main_time < timeOut && !endOfTestSequence) {
+
+  // Simulate until $finish or time out
+  while (!contextp->gotFinish() && main_time < timeOut ) {
     // Historical note, before Verilator 4.200 Verilated::gotFinish()
     // was used above in place of contextp->gotFinish().
     // Most of the contextp-> calls can use Verilated:: calls instead;
@@ -58,13 +56,8 @@ int Sim::main( uint32_t timeOut /*picoseconds*/) {
 
     if (contextp->time() % 5 == 0) {
       top->clk = !top->clk;
-      if (hold_reset)
-        hold_reset--;
     }
 
-    if (!hold_reset) {
-      top->rst_n = 1; // Deassert rst_ni
-    } 
 
     // Evaluate model
     // (If you have multiple models being simulated in the same
@@ -78,8 +71,7 @@ int Sim::main( uint32_t timeOut /*picoseconds*/) {
   // Final model cleanup
   top->final();
   tfp->close();
-  printf("main_time=%fns\n",
-         ((double)main_time) / (-contextp->timeprecision()));
+
 
   // Coverage analysis (calling write only after the test is known to pass)
 #if VM_COVERAGE

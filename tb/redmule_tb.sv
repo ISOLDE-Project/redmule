@@ -9,8 +9,7 @@ timeunit 1ps;
 timeprecision 1ps;
 
 module redmule_tb(
-  input   logic clk,
-  input   logic rst_n
+  input   logic clk
 );
 import redmule_pkg::*;
 
@@ -32,7 +31,7 @@ import redmule_pkg::*;
 
   // global signals
   // logic clk;
-  // logic rst_n;
+  logic rst_n;
   logic test_mode;
   logic fetch_enable;
   logic [31:0] core_boot_addr;
@@ -323,14 +322,14 @@ import redmule_pkg::*;
     .core_sleep_o        ( core_sleep   )
   );
 
-  initial begin
+  // initial begin
     // clk <= 1'b0;
     // rst_n <= 1'b0;
     // core_boot_addr = 32'h0;
     // for (int i = 0; i < 20; i++)
     //   cycle();
     // rst_n <= #TA 1'b1;
-    core_boot_addr = 32'h1C000084;
+    // core_boot_addr = 32'h1C000084;
 
     // for (int i = 0; i < 10; i++)
     //   cycle();
@@ -343,11 +342,11 @@ import redmule_pkg::*;
     //   cycle();
     // end
 
-  end
+  // end
   
-  integer f_t0, f_t1;
-  integer f_x, f_W, f_y, f_tau;
-  logic start;
+  // integer f_t0, f_t1;
+  // integer f_x, f_W, f_y, f_tau;
+  // logic start;
 
   int errors = -1;
   always_ff @(posedge clk)
@@ -364,23 +363,29 @@ import redmule_pkg::*;
     integer id;
     int cnt_rd, cnt_wr;
 
+    core_boot_addr = 32'h1C000084;
     test_mode = 1'b0;
     fetch_enable = 1'b0;
-
-    f_t0 = $fopen("time_start.txt");
-    f_t1 = $fopen("time_stop.txt");
+    rst_n = 1'b0;
+    // f_t0 = $fopen("time_start.txt");
+    // f_t1 = $fopen("time_stop.txt");
 
     // load instruction memory
     $readmemh(STIM_INSTR, redmule_tb.i_dummy_imemory.memory);
     $readmemh(STIM_DATA,  redmule_tb.i_dummy_dmemory.memory);
-
-    #(100*TCP);
+    $display("[%0t] Model running... core_boot_addr = 0x%h\n", $time, core_boot_addr);
+    repeat (20) @(posedge clk);
+    rst_n = 1'b1;
     fetch_enable = 1'b1;
-
-    #(100*TCP);
+    repeat (20) @(posedge clk);
+    $display("[%0t] Core status: rst_n = %b, fetch_enable = %b, core_sleep = %b \n", $time, rst_n,fetch_enable,core_sleep);
+    
+  //  #(100*TCP);
+  repeat (100) @(posedge clk);
     // end WFI + returned != -1 signals end-of-computation
-    while(~core_sleep || errors==-1)
-      #(TCP);
+    // while(~core_sleep || errors==-1)
+    //   #(TCP);
+    do @(posedge clk); while (~core_sleep || errors==-1);
     cnt_rd = redmule_tb.i_dummy_dmemory.cnt_rd[0] + redmule_tb.i_dummy_dmemory.cnt_rd[1] + redmule_tb.i_dummy_dmemory.cnt_rd[2] + redmule_tb.i_dummy_dmemory.cnt_rd[3] + redmule_tb.i_dummy_dmemory.cnt_rd[4] + redmule_tb.i_dummy_dmemory.cnt_rd[5] + redmule_tb.i_dummy_dmemory.cnt_rd[6] + redmule_tb.i_dummy_dmemory.cnt_rd[7] + redmule_tb.i_dummy_dmemory.cnt_rd[8];
     cnt_wr = redmule_tb.i_dummy_dmemory.cnt_wr[0] + redmule_tb.i_dummy_dmemory.cnt_wr[1] + redmule_tb.i_dummy_dmemory.cnt_wr[2] + redmule_tb.i_dummy_dmemory.cnt_wr[3] + redmule_tb.i_dummy_dmemory.cnt_wr[4] + redmule_tb.i_dummy_dmemory.cnt_wr[5] + redmule_tb.i_dummy_dmemory.cnt_wr[6] + redmule_tb.i_dummy_dmemory.cnt_wr[7] + redmule_tb.i_dummy_dmemory.cnt_wr[8];
     $display("[TB] - cnt_rd=%-8d", cnt_rd);

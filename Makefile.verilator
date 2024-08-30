@@ -42,13 +42,55 @@ VLT_CFLAGS   += -g -I ${VLT_BUILDDIR} -I $(VLT_ROOT)/include -I $(VLT_ROOT)/incl
 
 
 
-# default on target `all`
-all:
+#############
+# Verilator #
+#############
+TARGET       =  redmule
+BIN_DIR      ?= bin
 
-#################
-# Prerequisites #
-#################
-# Eventually it could be an option to package this statically using musl libc.
+VLT_TOP_MODULE = redmule_tb
+
+###############
+# C testbench #
+###############
+VLT_CC_SOURCES += \
+	${TB_DIR}/Sim.cc \
+	${TB_DIR}/sim_main.cc
+
+.PHONY: clean-vlt 
+
+# Clean all build directories and temporary files for Questasim simulation
+clean-vlt: 
+	rm -fr $(VLT_BUILDDIR)
+	rm -fv $(BIN_DIR)/$(TARGET).vlt
+	
+$(VLT_BUILDDIR)/files: Bender.yml
+	mkdir -p $(dir $@)
+	$(BENDER) script verilator $(common_targs) $(VLT_BENDER)  >$@
+	touch $@
+
+$(BIN_DIR)/$(TARGET).vlt: $(VLT_BUILDDIR)/files  ${VLT_CC_SOURCES} riscv-isa-sim/lib/libfesvr.a
+	mkdir -p $(dir $@)
+	$(VLT) $(VLT_FLAGS) -Mdir $(VLT_BUILDDIR) \
+		-f $(VLT_BUILDDIR)/files \
+		-CFLAGS "$(VLT_CFLAGS)" \
+		-LDFLAGS "-L${mkfile_path}/riscv-isa-sim/lib -lfesvr -lpthread" \
+		-o ../$@ --top-module $(VLT_TOP_MODULE)  $(VLT_CC_SOURCES)
+	$(MAKE) -C $(VLT_BUILDDIR) -j $(shell nproc) -f V${VLT_TOP_MODULE}.mk
+
+run-test: $(BIN_DIR)/$(TARGET).vlt
+	cd $(VSIM_DIR) &&          \
+	../$(BIN_DIR)/$(TARGET).vlt 
+
+.PHONY: help
+
+help:
+	@echo "available targets:"
+	@echo $(VLT_FESVR)/${FESVR_VERSION}_unzip
+	@echo riscv-isa-sim/lib/libfesvr.a
+	@echo $(BIN_DIR)/$(TARGET).vlt
+	@echo $(VLT_BUILDDIR)/files
+	@echo $(BIN)
 
 
 
