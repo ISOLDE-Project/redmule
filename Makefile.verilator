@@ -82,6 +82,8 @@ run-test: $(BIN_DIR)/$(TARGET).vlt
 	cd $(VSIM_DIR) &&          \
 	../$(BIN_DIR)/$(TARGET).vlt 
 
+rebuild-vlt: sw-build clean-vlt run-test
+
 .PHONY: help
 
 help:

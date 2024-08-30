@@ -83,7 +83,7 @@ import redmule_pkg::*;
   logic          core_sleep;
 
   // ATI timing parameters.
-  localparam TCP = 1.0ns; // clock period, 1 GHz clock
+  localparam TCP = 10.0ns; // clock period, 1 GHz clock
   localparam TA  = 0.2ns; // application time
   localparam TT  = 0.8ns; // test time
 
@@ -276,7 +276,7 @@ import redmule_pkg::*;
     .pulp_clock_en_i     ( 1'b1           ),  // PULP clock enable (only used if PULP_CLUSTER = 1)
     .scan_cg_en_i        ( 1'b0           ),  // Enable all clock gates for testing
     // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
-    .boot_addr_i         ( core_boot_addr ),
+    .boot_addr_i         ( 32'h1C000084 ),
     .mtvec_addr_i        ( '0             ),
     .dm_halt_addr_i      ( '0             ),
     .hart_id_i           ( '0             ),
@@ -318,7 +318,7 @@ import redmule_pkg::*;
     .debug_running_o     (              ),
     .debug_halted_o      (              ),
     // CPU Control Signals
-    .fetch_enable_i      ( fetch_enable ),
+    .fetch_enable_i      ( 1'b1 ),
     .core_sleep_o        ( core_sleep   )
   );
 
@@ -359,29 +359,42 @@ import redmule_pkg::*;
     end
   end
 
+  always_ff @(posedge clk)
+  begin
+    if (instr_req) begin
+       $display("[%0t] instr_req: instr_addr = 0x%h, rst_n = %b, fetch_enable = %b\n", $time, instr_addr, rst_n,fetch_enable);
+    end
+
+  if(instr_rvalid) begin
+        $display("[%0t] instr_rvalid: instr_addr = 0x%h, rst_n = %b, fetch_enable = %b\n", $time, core_boot_addr, rst_n,fetch_enable);
+    end  
+  end
+
   initial begin
     integer id;
     int cnt_rd, cnt_wr;
 
     core_boot_addr = 32'h1C000084;
     test_mode = 1'b0;
-    fetch_enable = 1'b0;
-    rst_n = 1'b0;
+    fetch_enable = 1'b1;
+    rst_n <= 1'b0;
     // f_t0 = $fopen("time_start.txt");
     // f_t1 = $fopen("time_stop.txt");
 
     // load instruction memory
     $readmemh(STIM_INSTR, redmule_tb.i_dummy_imemory.memory);
     $readmemh(STIM_DATA,  redmule_tb.i_dummy_dmemory.memory);
-    $display("[%0t] Model running... core_boot_addr = 0x%h\n", $time, core_boot_addr);
-    repeat (20) @(posedge clk);
+    $display("[%0t] Model starting... core_boot_addr = 0x%h, rst_n = %b, fetch_enable = %b\n", $time, core_boot_addr, rst_n,fetch_enable);
+    repeat (2) @(posedge clk);
     rst_n = 1'b1;
-    fetch_enable = 1'b1;
-    repeat (20) @(posedge clk);
+     $display("[%0t] Core status: core_boot_addr = 0x%h, rst_n = %b, fetch_enable = %b\n", $time, core_boot_addr, rst_n,fetch_enable);
+    repeat (2) @(posedge clk);
+    // fetch_enable = 1'b1;
+    // repeat (2) @(posedge clk);
     $display("[%0t] Core status: rst_n = %b, fetch_enable = %b, core_sleep = %b \n", $time, rst_n,fetch_enable,core_sleep);
     
   //  #(100*TCP);
-  repeat (100) @(posedge clk);
+  //repeat (100) @(posedge clk);
     // end WFI + returned != -1 signals end-of-computation
     // while(~core_sleep || errors==-1)
     //   #(TCP);

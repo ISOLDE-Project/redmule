@@ -8,9 +8,10 @@
   .section .text
   .global _start
 _start:
-  li t0, 0x80000000  # Load the address 0x80000000 into register t0
-  li t1, 0xACE       # Load the immediate value 0xACE into register t1
-  sw t1, 0(t0)       # Store the value from t1 into the memory location pointed to by t0
+  li t0, 0x1c000000  # Load the address 0x80000000 into register t0
+  #li t1, 0xACE       # Load the immediate value 0xACE into register t1
+  #sw t1, 0(t0)       # Store the value from t1 into the memory location pointed to by t0
+  add x0,x0,0
   wfi
 
   # Cluster PEs will also starts here to avoid aligning another entry point

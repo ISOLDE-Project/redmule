@@ -21,7 +21,7 @@ module tb_dummy_memory
   parameter BASE_ADDR   = 0,
   parameter PROB_STALL  = 0.0,
 `ifndef VERILATOR
-  parameter time TCP = 1.0ns, // clock period, 1GHz clock
+  parameter time TCP = 10.0ns, // clock period, 1GHz clock
   parameter time TA  = 0.2ns, // application time
   parameter time TT  = 0.8ns  // test time
 `else

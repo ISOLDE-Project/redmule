@@ -176,6 +176,7 @@ golden-clean:
 
 clean-all: hw-clean sw-clean
 	rm -rf $(mkfile_path)/.bender
+	rm -rf $(mkfile_path)/Bender.lock
 	rm -rf $(compile_script)
 
 hw-build: $(VSIM_DIR)

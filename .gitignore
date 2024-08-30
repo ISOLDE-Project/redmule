@@ -12,3 +12,4 @@ riscv-isa-sim/
 *.txt
 bin/
 sw/build/
+Bender.lock 
