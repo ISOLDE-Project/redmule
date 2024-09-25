@@ -41,8 +41,14 @@ SIM_BSP_RESULTS          = $(SIM_TEST_PROGRAM_RESULTS)/bsp
 # Compile compile flags for all simulators
 SV_CMP_FLAGS =
 
+#top module
+VLT_TOP_MODULE     ?= tb_top_verilator
+
 # verilator configuration
 VERILATOR           = verilator
+VERILATOR_ROOT ?= $(dir $(shell which $(VLT)))/../share/verilator
+VLT_ROOT	   ?= ${VERILATOR_ROOT}
+
 VERI_FLAGS         +=
 VERI_COMPILE_FLAGS += -Wno-BLKANDNBLK $(SV_CMP_FLAGS) # hope this doesn't hurt us in the long run
 VERI_TRACE         ?=
@@ -60,6 +66,7 @@ VERI_CFLAGS        += -O2
 #ifeq ($(findstring +vcd,$(VERI_FLAGS)),+vcd)
 
 VLT_FLAGS    += -Wno-fatal
+VLT_CFLAGS   += -DTOPLEVEL_NAME=$(VLT_TOP_MODULE)
 VLT_CFLAGS   += -std=c++17 
 
 ifneq (${WAVES}, 0)
@@ -67,6 +74,8 @@ VERI_TRACE="--trace"
 VLT_CFLAGS  += -DVCD_TRACE
 endif
 
+VLT_FLAGS    += --timing
+VLT_CFLAGS   += -g  -I $(VLT_ROOT)/include -I $(VLT_ROOT)/include/vltstd  
 
 verilate: testbench_verilator
 
@@ -82,16 +91,16 @@ testbench_verilator:  $(TBSRC_VERI)
 		$(VLT_FLAGS)   \
 		--Wno-lint --Wno-UNOPTFLAT \
 		--Wno-MODDUP --top-module \
-		tb_top_verilator $(TBSRC_VERI) \
+		$(VLT_TOP_MODULE) $(TBSRC_VERI) \
 		-f $(CV_CORE_MANIFEST) \
 		$(CV_CORE_PKG)/bhv/$(CV_CORE_LC)_core_log.sv \
 		$(TBSRC_CORE)/tb_top_verilator.cpp --Mdir $(VERI_OBJ_DIR) \
 		-CFLAGS "$(VLT_CFLAGS)"  \
 		$(VERI_COMPILE_FLAGS)
-	$(MAKE) -C $(VERI_OBJ_DIR) -j$(num_cores_half) -f Vtb_top_verilator.mk
+	$(MAKE) -C $(VERI_OBJ_DIR) -j$(num_cores_half) -f V$(VLT_TOP_MODULE).mk
 	mkdir -p $(SIM_RESULTS)
 	mkdir -p $(SIM_TEST_RESULTS)
-	mv $(VERI_OBJ_DIR)/Vtb_top_verilator $(SIM_TEST_RESULTS)/verilator_executable
+	mv $(VERI_OBJ_DIR)/V$(VLT_TOP_MODULE) $(SIM_TEST_RESULTS)/verilator_executable
 
 veri-test: verilate $(TEST_PROGRAM_PATH)/$(TEST)/$(TEST).hex
 	@echo "$(BANNER)"
@@ -107,10 +116,11 @@ veri-test: verilate $(TEST_PROGRAM_PATH)/$(TEST)/$(TEST).hex
 veri-clean: verilate-clean
 
 verilate-clean: 
-	if [ -d $(SIM_RESULTS) ]; then rm -r $(SIM_RESULTS); fi
-	if [ -d $(VERI_OBJ_DIR) ]; then rm -r $(VERI_OBJ_DIR); fi
+	if [ -d $(SIM_RESULTS)   ]; then rm -r $(SIM_RESULTS);  fi
+	if [ -d $(VERI_OBJ_DIR)  ]; then rm -r $(VERI_OBJ_DIR); fi
 	rm -rf testbench_verilator
-	if [ -e memory_dump.bin ]; then rm memory_dump.bin; fi
+	if [ -e memory_dump.bin  ]; then rm memory_dump.bin;    fi
+	if [ -e verilator_tb.vcd ]; then rm verilator_tb.vcd;   fi
 
 .PHONY: run-test
 run-test: verilate 
@@ -125,25 +135,3 @@ run-test: verilate
 ###############################################################################
 
 
-
-.PHONY: show-info
-show-info:
-	@echo CV_CORE_PKG=$(CV_CORE_PKG)
-	@echo SIMULATOR=$(SIMULATOR)
-	@echo  TBSRC_VERI=$(TBSRC_VERI)
-	@echo  TBSRC_PKG=$(TBSRC_PKG)
-	@echo  test: $(TEST_PROGRAM_PATH)/$(TEST)/$(TEST).hex
-	@echo  VERI_TRACE=$(VERI_TRACE) 
-	@echo  clone target=clone_$(CV_CORE_LC)_rtl
-	@echo clone_cmd=$(CLONE_CV_CORE_CMD)
-	@echo $(VERILATOR) --cc --sv --exe \
-		$(VERI_TRACE) \
-		$(VLT_FLAGS)   \
-		--Wno-lint --Wno-UNOPTFLAT \
-		--Wno-MODDUP --top-module \
-		tb_top_verilator $(TBSRC_VERI) \
-		-f $(CV_CORE_MANIFEST) \
-		$(CV_CORE_PKG)/bhv/$(CV_CORE_LC)_core_log.sv \
-		$(TBSRC_CORE)/tb_top_verilator.cpp --Mdir $(VERI_OBJ_DIR) \
-		-CFLAGS "$(VLT_CFLAGS)"  \
-		$(VERI_COMPILE_FLAGS)

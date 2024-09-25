@@ -1,6 +1,36 @@
+
+
 #include "svdpi.h"
-#include "Vtb_top_verilator__Dpi.h"
-#include "Vtb_top_verilator.h"
+/** it should have a dedicade header file */
+
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
+// Concatenate macros
+#define CONCATENATE(a, b) a##b
+#define CONCATENATE2(a, b) CONCATENATE(a, b)
+
+#ifndef TOPLEVEL_NAME
+#error "TOPLEVEL_NAME must be set to the name of the toplevel."
+#else
+#pragma message ("TOPLEVEL_NAME is set to: " TOSTRING(TOPLEVEL_NAME))
+#endif
+
+// Construct the include _Dpi.h file name
+#define TOP_LEVEL_DPI_HEADER_NAME CONCATENATE2(V, TOPLEVEL_NAME)__Dpi.h
+
+// Construct the include top module file name
+#define TOP_LEVEL_HEADER_NAME CONCATENATE2(V, TOPLEVEL_NAME).h
+
+#define TOP_LEVEL_DUT CONCATENATE2(V, TOPLEVEL_NAME)
+
+#include TOSTRING(TOP_LEVEL_DPI_HEADER_NAME)
+#include TOSTRING(TOP_LEVEL_HEADER_NAME)
+
+
+/**header file ends here */
+
 #include "verilated_vcd_c.h"
 #include "verilated.h"
 
@@ -16,7 +46,7 @@ void dump_memory();
 double sc_time_stamp();
 
 static vluint64_t t = 0;
-Vtb_top_verilator *top;
+TOP_LEVEL_DUT *top;
 
 int main(int argc, char **argv, char **env)
 {
@@ -36,7 +66,7 @@ int main(int argc, char **argv, char **env)
 
     Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
-    top = new Vtb_top_verilator();
+    top = new TOP_LEVEL_DUT();
 
     svSetScope(svGetScopeFromName(
         "TOP.tb_top_verilator.cv32e40p_tb_wrapper_i.ram_i.dp_ram_i"));
@@ -52,7 +82,9 @@ int main(int argc, char **argv, char **env)
     top->rst_ni         = 0;
 
     top->eval();
+#ifdef DUMP_MEMORY    
     dump_memory();
+#endif    
 
 #ifdef MCY
     svSetScope(svGetScopeFromName(
