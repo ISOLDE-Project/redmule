@@ -17,7 +17,7 @@ TB_DIR    := ${mkfile_path}/test/cc
 
 FESVR_VERSION  ?= 35d50bc40e59ea1d5566fbd3d9226023821b1bb6
 
-VLT_BUILDDIR := $(mkfile_path)/work-vlt
+VLT_BUILDDIR := $(mkfile_path)/work-vlt2
 VLT_FESVR     = $(mkfile_path)/riscv-isa-sim
 VLT_FLAGS    += --cc
 VLT_FLAGS    += --exe 
@@ -63,16 +63,20 @@ VLT_CC_SOURCES += \
 clean-vlt: 
 	rm -fr $(VLT_BUILDDIR)
 	rm -fv $(BIN_DIR)/$(TARGET).vlt
-
-verilate: $(BIN_DIR)/verilator_executable
-
-manifest.flist: Bender.yml
+	
+$(VLT_BUILDDIR)/files: Bender.yml
+	mkdir -p $(dir $@)
 	$(BENDER) script verilator $(common_targs) $(VLT_BENDER)  >$@
 	touch $@
 
-$(BIN_DIR)/verilator_executable: manifest.flist
+$(BIN_DIR)/$(TARGET).vlt: $(VLT_BUILDDIR)/files  ${VLT_CC_SOURCES} riscv-isa-sim/lib/libfesvr.a
 	mkdir -p $(dir $@)
-	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(dir $@) verilate
+	$(VLT) $(VLT_FLAGS) -Mdir $(VLT_BUILDDIR) \
+		-f $(VLT_BUILDDIR)/files \
+		-CFLAGS "$(VLT_CFLAGS)" \
+		-LDFLAGS "-L${mkfile_path}/riscv-isa-sim/lib -lfesvr -lpthread" \
+		-o ../$@ --top-module $(VLT_TOP_MODULE)  $(VLT_CC_SOURCES)
+	$(MAKE) -C $(VLT_BUILDDIR) -j $(shell nproc) -f V${VLT_TOP_MODULE}.mk
 
 run-test: $(BIN_DIR)/$(TARGET).vlt
 	cd $(VSIM_DIR) &&          \

@@ -366,7 +366,7 @@ import redmule_pkg::*;
     end
 
   if(instr_rvalid) begin
-        $display("[%0t] instr_rvalid: instr_addr = 0x%h, rst_n = %b, fetch_enable = %b\n", $time, core_boot_addr, rst_n,fetch_enable);
+        $display("[%0t] instr_rvalid: instr_addr = 0x%h, rst_n = %b, fetch_enable = %b\n", $time, instr_addr, rst_n,fetch_enable);
     end  
   end
 

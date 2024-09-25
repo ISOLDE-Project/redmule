@@ -13,3 +13,4 @@ riscv-isa-sim/
 bin/
 sw/build/
 Bender.lock 
+manifest.flist
