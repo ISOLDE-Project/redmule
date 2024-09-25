@@ -1,3 +1,34 @@
+# ISOLDE
+```sh
+. ./eth.sh
+```
+## build simulation
+```sh
+make verilate
+```
+### get a clean slate
+```sh
+make veri-clean
+```
+## test simulation
+```sh
+make sanity-veri-run
+```
+Output similar to:    
+```
+HELLO WORLD!!!
+This is the OpenHW Group CV32E40P CORE-V processor core.
+CV32E40P is a RISC-V ISA compliant core with the following attributes:
+        mvendorid = 0x602
+        marchid   = 0x4
+        mimpid    = 0x0
+        misa      = 0x40001104
+        XLEN is 32-bits
+        Supported Instructions Extensions: MIC
+
+TOP.tb_top_verilator @ 130110: EXIT SUCCESS
+- /home/uic52463/hdd2/isolde-project/redmule/tb/core/tb_top_verilator.sv:83: Verilog $finish
+```
 # RedMulE
 RedMulE (**Red**uced-Precision Matrix **Mul**tiplication **E**ngine) is an open-source hardware accelerator based on the [HWPE](https://hwpe-doc.readthedocs.io/en/latest/index.html) template. It is designed to accelerate General Matrix-Matrix Operations (GEMM-Ops) on Floating-Point (FP) FP16 and FP8 input matrices. The keyword GEMM-Ops includes all the matrix operations of the kind **Z = (X op1 W) op2 Z**. The operators *op1* and *op2* can be any of those grouped in the following table:
 
@@ -21,7 +52,7 @@ If you want to use RedMulE for academic purposes, please cite it as:
 
 ```
 @article{TORTORELLA2023122,
-title = {RedMule: A mixed-precision matrix–matrix operation engine for flexible and energy-efficient on-chip linear algebra and TinyML training acceleration},
+title = {RedMule: A mixed-precision matrixï¿½matrix operation engine for flexible and energy-efficient on-chip linear algebra and TinyML training acceleration},
 journal = {Future Generation Computer Systems},
 volume = {149},
 pages = {122-135},
