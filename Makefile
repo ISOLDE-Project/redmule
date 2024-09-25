@@ -234,6 +234,9 @@ $(BIN_DIR)/$(TARGET).vlt: $(VLT_BUILDDIR)/files  ${VLT_CC_SOURCES} riscv-isa-sim
 		-o ../$@ --top-module $(VLT_TOP_MODULE)  $(VLT_CC_SOURCES)
 	$(MAKE) -C $(VLT_BUILDDIR) -j $(shell nproc) -f V${VLT_TOP_MODULE}.mk
 
+
+verilate: $(BIN_DIR)/$(TARGET).vlt
+
 run-test: $(BIN_DIR)/$(TARGET).vlt
 	$(BIN_DIR)/$(TARGET).vlt 
 

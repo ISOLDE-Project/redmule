@@ -1,3 +1,21 @@
+# ISOLDE
+```sh
+make bin/redmule.vlt
+make sw-build
+make run-test
+```
+output:  
+```
+bin/redmule.vlt 
+[1] Model running... core_boot_addr = 0x1c000084
+
+[1055] Core status: rst_n = 1, fetch_enable = 1, core_sleep = 0 
+
+main_time=8947.833333ns
+- S i m u l a t i o n   R e p o r t: Verilator 5.024 2024-04-05
+- Verilator: end at 107ns; walltime 5.085 s; speed 0.000 s/s
+- Verilator: cpu 0.000 s on 1 threads; alloced 452 MB
+```
 # RedMulE
 RedMulE (**Red**uced-Precision Matrix **Mul**tiplication **E**ngine) is an open-source hardware accelerator based on the [HWPE](https://hwpe-doc.readthedocs.io/en/latest/index.html) template. It is designed to accelerate General Matrix-Matrix Operations (GEMM-Ops) on Floating-Point (FP) FP16 and FP8 input matrices. The keyword GEMM-Ops includes all the matrix operations of the kind **Z = (X op1 W) op2 Y**. The operators *op1* and *op2* can be any of those grouped in the following table:
 
