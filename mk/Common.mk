@@ -41,7 +41,42 @@
 # Original Author: Robert Balas (balasr@iis.ee.ethz.ch)
 #
 ###############################################################################
+##
+###############################################################################
+CV_CORE      ?= CV32E40P
 
+num_cores := $(shell nproc)
+num_cores_half := $(shell echo "$$(($(num_cores) / 2))")
+
+PRJ_HOME      := $(shell git rev-parse --show-toplevel)
+CORE_V_VERIF  := $(PRJ_HOME)
+TBSRC_HOME    := $(PRJ_HOME)/tb
+TBSRC_CORE    := $(TBSRC_HOME)/core
+TBSRC_VERI    := $(TBSRC_CORE)/tb_top_verilator.sv \
+                 $(TBSRC_CORE)/cv32e40p_tb_wrapper.sv \
+                 $(TBSRC_CORE)/tb_riscv/riscv_rvalid_stall.sv \
+                 $(TBSRC_CORE)/tb_riscv/riscv_gnt_stall.sv \
+                 $(TBSRC_CORE)/mm_ram.sv \
+                 $(TBSRC_CORE)/dp_ram.sv
+
+
+CV_CORE_LC     = $(shell echo $(CV_CORE) | tr A-Z a-z)
+CV_CORE_UC     = $(shell echo $(CV_CORE) | tr a-z A-Z)
+
+CV_CORE_PKG           :=  $(shell $(BENDER) path $(CV_CORE_LC))
+CV_CORE_MANIFEST    ?= $(CV_CORE_PKG)/cv32e40p_manifest.flist
+export DESIGN_RTL_DIR = $(CV_CORE_PKG)/rtl
+
+
+#TEST         ?= hello-world
+# Test-Program directores.
+# Relative path is used for Verilator which cannot seem to handle loooong pathnames.
+#TEST_PROGRAM_PATH    = $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs/custom
+#TEST_PROGRAM_RELPATH = ../../$(CV_CORE_LC)/tests/programs/custom
+#TEST_PROGRAM_RELPATH = $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs/custom
+#TEST_TEST_DIR        := $(TEST_PROGRAM_PATH)/$(TEST)
+###############################################################################
+##
 RISCV            = $(CV_SW_TOOLCHAIN)
 RISCV_PREFIX     = $(CV_SW_PREFIX)
 RISCV_EXE_PREFIX = $(RISCV)/bin/$(RISCV_PREFIX)
@@ -52,7 +87,7 @@ RISCV_CFLAGS     +=
 
 CFLAGS ?= -Os -g -static -mabi=ilp32 -march=$(RISCV_MARCH) -Wall -pedantic $(RISCV_CFLAGS)
 
-TEST_FILES        = $(filter %.c %.S,$(wildcard  $(TEST_TEST_DIR)/*))
+#TEST_FILES        = $(filter %.c %.S,$(wildcard  $(TEST_TEST_DIR)/*))
 # Optionally use linker script provided in test directory
 # this must be evaluated at access time, so ifeq/ifneq does
 # not get parsed correctly
@@ -62,17 +97,14 @@ TEST_LD         = $(addprefix $(TEST_TEST_DIR)/, link.ld)
 LD_LIBRARY 	= $(if $(wildcard $(TEST_RESULTS_LD)),-L $(SIM_TEST_PROGRAM_RESULTS),$(if $(wildcard $(TEST_LD)),-L $(TEST_TEST_DIR),))
 LD_FILE 	= $(if $(wildcard $(TEST_RESULTS_LD)),$(TEST_RESULTS_LD),$(if $(wildcard $(TEST_LD)),$(TEST_LD),$(BSP)/link.ld))
 
-$(warning TEST_TEST_DIR set to $(TEST_TEST_DIR))
-$(warning RISCV set to $(RISCV))
-$(warning RISCV_PREFIX set to $(RISCV_PREFIX))
-$(warning RISCV_EXE_PREFIX set to $(RISCV_EXE_PREFIX))
-$(warning RISCV_MARCH set to $(RISCV_MARCH))
-$(warning RISCV_CC set to $(RISCV_CC))
-$(warning RISCV_CFLAGS set to $(RISCV_CFLAGS))
+
 
 BSP                                  = $(CORE_V_VERIF)/$(CV_CORE_LC)/bsp
 
-RISCV_CFLAGS += -I $(BSP)
+
+RISCV_CFLAGS += -I $(CORE_V_VERIF)/$(CV_CORE_LC)
+RISCV_CFLAGS += $(INC)
+RISCV_CFLAGS += -DUSE_BSP
 
 %.hex: %.elf
 	@echo "$(BANNER)"
@@ -91,35 +123,35 @@ RISCV_CFLAGS += -I $(BSP)
 
 
 
-TEST_FILES_FULL   = $(filter %.c %.S,$(wildcard $(TEST_TEST_DIR)/*))
-TEST_FILES        = $(notdir $(TEST_FILES_FULL))
+#TEST_FILES_FULL   = $(filter %.c %.S,$(wildcard $(TEST_TEST_DIR)/*))
+#TEST_FILES        = $(notdir $(TEST_FILES_FULL))
 
 
 # Separate object file lists for .c and .S files
-C_OBJS := $(patsubst %.c,%.o,$(filter %.c,$(TEST_FILES)))
-S_OBJS := $(patsubst %.S,%.o,$(filter %.S,$(TEST_FILES)))
+#C_OBJS := $(patsubst %.c,%.o,$(filter %.c,$(TEST_FILES)))
+#S_OBJS := $(patsubst %.S,%.o,$(filter %.S,$(TEST_FILES)))
 
 # Combine them to get TEST_OBJS
-TEST_OBJS := $(C_OBJS) $(S_OBJS)
+#TEST_OBJS := $(C_OBJS) $(S_OBJS)
 
 
 # If a test defines "default_cflags" in its yaml, then it is responsible to define ALL flags
 # Otherwise add the default cflags in the variable CFLAGS defined above
-ifneq ($(TEST_DEFAULT_CFLAGS),)
-TEST_CFLAGS += $(TEST_DEFAULT_CFLAGS)
-else
-TEST_CFLAGS += $(CFLAGS)
-endif
+#ifneq ($(TEST_DEFAULT_CFLAGS),)
+#TEST_CFLAGS += $(TEST_DEFAULT_CFLAGS)
+#else
+#TEST_CFLAGS += $(CFLAGS)
+#endif
 
 # Optionally use linker script provided in test directory
 # this must be evaluated at access time, so ifeq/ifneq does
 # not get parsed correctly
-TEST_RESULTS_LD = $(addprefix $(SIM_TEST_PROGRAM_RESULTS)/, link.ld)
-TEST_LD         = $(addprefix $(TEST_TEST_DIR)/, link.ld)
+#TEST_RESULTS_LD = $(addprefix $(SIM_TEST_PROGRAM_RESULTS)/, link.ld)
+#TEST_LD         = $(addprefix $(TEST_TEST_DIR)/, link.ld)
 
-LD_LIBRARY 	= $(if $(wildcard $(TEST_RESULTS_LD)),-L $(SIM_TEST_PROGRAM_RESULTS),$(if $(wildcard $(TEST_LD)),-L $(TEST_TEST_DIR),))
-LD_FILE 	= $(if $(wildcard $(TEST_RESULTS_LD)),$(TEST_RESULTS_LD),$(if $(wildcard $(TEST_LD)),$(TEST_LD),$(BSP)/link.ld))
-LD_LIBRARY += -L $(SIM_BSP_RESULTS)
+#LD_LIBRARY 	= $(if $(wildcard $(TEST_RESULTS_LD)),-L $(SIM_TEST_PROGRAM_RESULTS),$(if $(wildcard $(TEST_LD)),-L $(TEST_TEST_DIR),))
+#LD_FILE 	= $(if $(wildcard $(TEST_RESULTS_LD)),$(TEST_RESULTS_LD),$(if $(wildcard $(TEST_LD)),$(TEST_LD),$(BSP)/link.ld))
+#LD_LIBRARY += -L $(SIM_BSP_RESULTS)
 
 
 #.PHONY: hex
@@ -143,22 +175,6 @@ bsp:
 		RISCV_CFLAGS="$(RISCV_CFLAGS)" \
 		all
 
-compile:
-	@echo "$(BANNER)"
-	@echo "* Compiling the test"
-	@echo "$(BANNER)"
-	mkdir -p $(SIM_BSP_RESULTS)
-	cp $(BSP)/Makefile $(SIM_BSP_RESULTS)
-	make -C $(SIM_BSP_RESULTS) \
-		SRCS=$(TEST_FILES)     \
-		VPATH=$(TEST_TEST_DIR) \
-		RISCV=$(RISCV) \
-		RISCV_PREFIX=$(RISCV_PREFIX) \
-		RISCV_EXE_PREFIX=$(RISCV_EXE_PREFIX) \
-		RISCV_MARCH=$(RISCV_MARCH) \
-		RISCV_CC=$(RISCV_CC) \
-		RISCV_CFLAGS="$(RISCV_CFLAGS)" \
-		compile
 
 %.elf:
 	@echo "$(BANNER)"
@@ -179,6 +195,17 @@ compile:
 		$@
 
 
-clean_bsp:
+clean-bsp:
 #	make -C $(BSP) clean
 	rm -rf $(SIM_BSP_RESULTS)
+
+clean-test-programs: clean-bsp
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.o"       -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.hex"     -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.elf"     -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.map"     -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.readelf" -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.objdump" -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.headers" -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "corev_*.S" -delete
+	find $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs -name "*.itb" -delete	

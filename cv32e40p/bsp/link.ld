@@ -1,83 +1,120 @@
-/* Copyright lowRISC contributors.
-   Licensed under the Apache License, Version 2.0, see LICENSE for details.
-   SPDX-License-Identifier: Apache-2.0 */
+/* Copyright 2023 ETH Zurich and University of Bologna. */
+/* Licensed under the Apache License, Version 2.0, see LICENSE for details. */
+/* SPDX-License-Identifier: Apache-2.0 */
 
-OUTPUT_ARCH(riscv)
+/* Yvan Tortorella <yvan.tortorella@unibo.it> */
+
+SEARCH_DIR(.)
+__DYNAMIC  =  0;
 
 MEMORY
 {
-/* Change this if you'd like different sizes. Arty A7-100(35) has a maximum of 607.5KB(225KB)
-   BRAM space. Configuration below is for maximum BRAM capacity with Artya A7-35 while letting
-   CoreMark run (.vmem of 152.8KB).
-*/
-    ram         : ORIGIN = 0x00100000, LENGTH = 0x30000 /* 192 kB */
-    stack       : ORIGIN = 0x00130000, LENGTH = 0x8000  /* 32 kB */
+    instrram    : ORIGIN = 0x1c000000, LENGTH = 0x8000
+    dataram     : ORIGIN = 0x1c010000, LENGTH = 0x30000
+    stack       : ORIGIN = 0x1c040000, LENGTH = 0x30000
 }
 
 /* Stack information variables */
-_min_stack      = 0x2000;   /* 8K - minimum stack space to reserve */
+_min_stack      = 0x1000;   /* 4K - minimum stack space to reserve */
 _stack_len     = LENGTH(stack);
 _stack_start   = ORIGIN(stack) + LENGTH(stack);
 
 _entry_point = _vectors_start + 0x80;
 ENTRY(_entry_point)
 
-/* The tohost address is used by Spike for a magic "stop me now" message. This
-   is set to equal SIM_CTRL_CTRL (see simple_system_regs.h), which has that
-   effect in simple_system simulations. Note that it must be 8-byte aligned.
-
-   We don't read data back from Spike, so fromhost is set to some dummy value:
-   we place it just above the top of the stack.
- */
-tohost   = 0x20008;
-fromhost = _stack_start + 0x10;
+/* We have to align each sector to word boundaries as our current s19->slm
+ * conversion scripts are not able to handle non-word aligned sections. */
 
 SECTIONS
 {
     .vectors :
     {
-        . = ALIGN(4);
+       . = ALIGN(4);
 		_vectors_start = .;
         KEEP(*(.vectors))
 		_vectors_end = .;
-    } > ram
+    } > instrram
 
     .text : {
         . = ALIGN(4);
+        _stext = .;
         *(.text)
-        *(.text.*)
-    }  > ram
+        _etext  =  .;
+        __CTOR_LIST__ = .;
+        LONG((__CTOR_END__ - __CTOR_LIST__) / 4 - 2)
+        *(.ctors)
+        LONG(0)
+        __CTOR_END__ = .;
+        __DTOR_LIST__ = .;
+        LONG((__DTOR_END__ - __DTOR_LIST__) / 4 - 2)
+        *(.dtors)
+        LONG(0)
+        __DTOR_END__ = .;
+        *(.lit)
+        *(.shdata)
+        _endtext = .;
+    }  > instrram
+
+    /*--------------------------------------------------------------------*/
+    /* Global constructor/destructor segment                              */
+    /*--------------------------------------------------------------------*/
+
+    .preinit_array     :
+    {
+      PROVIDE_HIDDEN (__preinit_array_start = .);
+      KEEP (*(.preinit_array))
+      PROVIDE_HIDDEN (__preinit_array_end = .);
+    } > dataram
+
+    .init_array     :
+    {
+      PROVIDE_HIDDEN (__init_array_start = .);
+      KEEP (*(SORT(.init_array.*)))
+      KEEP (*(.init_array ))
+      PROVIDE_HIDDEN (__init_array_end = .);
+    } > dataram
+
+    .fini_array     :
+    {
+      PROVIDE_HIDDEN (__fini_array_start = .);
+      KEEP (*(SORT(.fini_array.*)))
+      KEEP (*(.fini_array ))
+      PROVIDE_HIDDEN (__fini_array_end = .);
+    } > dataram
 
     .rodata : {
         . = ALIGN(4);
-        /* Small RO data before large RO data */
-        *(.srodata)
-        *(.srodata.*)
         *(.rodata);
         *(.rodata.*)
-    } > ram
+    } > dataram
+
+    .shbss :
+    {
+        . = ALIGN(4);
+        *(.shbss)
+    } > dataram
 
     .data : {
         . = ALIGN(4);
-        /* Small data before large data */
-        *(.sdata)
-        *(.sdata.*)
+        sdata  =  .;
+        _sdata  =  .;
         *(.data);
         *(.data.*)
-    } > ram
+        edata  =  .;
+        _edata  =  .;
+    } > dataram
 
     .bss :
     {
         . = ALIGN(4);
         _bss_start = .;
-        /* Small BSS before large BSS */
-        *(.sbss)
-        *(.sbss.*)
         *(.bss)
         *(.bss.*)
+        *(.sbss)
+        *(.sbss.*)
         *(COMMON)
         _bss_end = .;
-    } > ram
+    } > dataram
 
     /* ensure there is enough room for stack */
     .stack (NOLOAD): {
@@ -87,4 +124,6 @@ SECTIONS
         stack = . ;
         _stack = . ;
     } > stack
+
 }
+

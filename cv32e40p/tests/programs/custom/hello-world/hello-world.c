@@ -26,7 +26,7 @@
 
 //#include <stdio.h>
 #include <stdlib.h>
-#include "tinyprintf.h"
+#include "bsp/tinyprintf.h"
 
 //FIXME: the core tb does not have the ability to select PULP/NO_PULP at
 //       compile-time, so we set a default MISA to NO_PULP value.  This

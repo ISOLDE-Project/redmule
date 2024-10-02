@@ -7,7 +7,7 @@
 
 timeunit 1ps; timeprecision 1ps;
 
-module redmule_tb (
+module tb_redmule_verilator (
     input logic clk_i,
     input logic rst_ni,
     input logic fetch_enable_i
@@ -28,14 +28,9 @@ module redmule_tb (
   parameter int unsigned PULP_ZFINX = 0;
   parameter logic [31:0] BASE_ADDR = 32'h1c000000;
   parameter logic [31:0] HWPE_ADDR_BASE_BIT = 20;
-  parameter string STIM_INSTR = "./stim_instr.txt";
-  parameter string STIM_DATA = "./stim_data.txt";
 
   // global signals
-  //logic clk_i;
-  //logic rst_ni;
   logic test_mode;
-  //logic fetch_enable_i;
   logic [31:0] core_boot_addr;
   logic redmule_busy;
 
@@ -89,27 +84,7 @@ module redmule_tb (
   localparam TA = 0.2ns;  // application time
   localparam TT = 0.8ns;  // test time
 
-  // // Performs one entire clock cycle.
-  // task cycle;
-  //   clk_i <= #(TCP / 2) 0;
-  //   clk_i <= #TCP 1;
-  //   #TCP;
-  // endtask
 
-  // // The following task schedules the clock edges for the next cycle and
-  // // advances the simulation time to that cycles test time (localparam TT)
-  // // according to ATI timings.
-  // task cycle_start;
-  //   clk_i <= #(TCP / 2) 0;
-  //   clk_i <= #TCP 1;
-  //   #TT;
-  // endtask
-
-  // // The following task finishes a clock cycle previously started with
-  // // cycle_start by advancing the simulation time to the end of the cycle.
-  // task cycle_end;
-  //   #(TCP - TT);
-  // endtask
 
   // bindings
   always_comb begin : bind_periph
@@ -316,24 +291,6 @@ module redmule_tb (
       .core_sleep_o(core_sleep)
   );
 
-  //initial begin
-  //   clk_i   <= 1'b0;
-  //   rst_ni <= 1'b0;
-  //   core_boot_addr = 32'h0;
-  //   for (int i = 0; i < 20; i++) cycle();
-  //   rst_ni <= #TA 1'b1;
-  //  core_boot_addr = 32'h1C000084;
-
-  //   for (int i = 0; i < 10; i++) cycle();
-  //   rst_ni <= #TA 1'b0;
-  //   for (int i = 0; i < 10; i++) cycle();
-  //   rst_ni <= #TA 1'b1;
-
-  //   while (1) begin
-  //     cycle();
-  //   end
-
-  //end
 
   initial begin : load_prog
     automatic string firmware;
@@ -344,7 +301,7 @@ module redmule_tb (
 
       $display("[TESTBENCH] @ t=%0t: loading firmware %0s", $time, firmware);
       // load instruction memory
-      $readmemh(firmware, redmule_tb.i_dummy_imemory.memory);
+      $readmemh(firmware, tb_redmule_verilator.i_dummy_imemory.memory);
     end else begin
       $display("No firmware specified");
       $finish;
@@ -352,12 +309,12 @@ module redmule_tb (
 
     if ($value$plusargs("simdata=%s", simdata)) begin
       $display("[TESTBENCH] @ t=%0t: loading simdata %0s", $time, simdata);
-      $readmemh(simdata, redmule_tb.i_dummy_dmemory.memory);
+      $readmemh(simdata, tb_redmule_verilator.i_dummy_dmemory.memory);
     end else begin
       $display("No simdata specified");
       $finish;
     end
-    core_boot_addr = 32'h1C000080;
+    core_boot_addr = 32'h1C000084;
   end
 
   integer f_t0, f_t1;
@@ -379,22 +336,10 @@ module redmule_tb (
     int cnt_rd, cnt_wr;
 
     test_mode = 1'b0;
-    //fetch_enable_i = 1'b0;
 
-
-    // load instruction memory
-    //    $readmemh(STIM_INSTR, redmule_tb.i_dummy_imemory.memory);
-    //    $readmemh(STIM_DATA, redmule_tb.i_dummy_dmemory.memory);
-
-    // #(100 * TCP);
-    // fetch_enable_i = 1'b1;
-
-    // #(100 * TCP);
-    // end WFI + returned != -1 signals end-of-computation
-    //while (~core_sleep || errors == -1) #(TCP);
-    do @(posedge clk_i); while (~core_sleep || errors==-1);
-    cnt_rd = redmule_tb.i_dummy_dmemory.cnt_rd[0] + redmule_tb.i_dummy_dmemory.cnt_rd[1] + redmule_tb.i_dummy_dmemory.cnt_rd[2] + redmule_tb.i_dummy_dmemory.cnt_rd[3] + redmule_tb.i_dummy_dmemory.cnt_rd[4] + redmule_tb.i_dummy_dmemory.cnt_rd[5] + redmule_tb.i_dummy_dmemory.cnt_rd[6] + redmule_tb.i_dummy_dmemory.cnt_rd[7] + redmule_tb.i_dummy_dmemory.cnt_rd[8];
-    cnt_wr = redmule_tb.i_dummy_dmemory.cnt_wr[0] + redmule_tb.i_dummy_dmemory.cnt_wr[1] + redmule_tb.i_dummy_dmemory.cnt_wr[2] + redmule_tb.i_dummy_dmemory.cnt_wr[3] + redmule_tb.i_dummy_dmemory.cnt_wr[4] + redmule_tb.i_dummy_dmemory.cnt_wr[5] + redmule_tb.i_dummy_dmemory.cnt_wr[6] + redmule_tb.i_dummy_dmemory.cnt_wr[7] + redmule_tb.i_dummy_dmemory.cnt_wr[8];
+    do @(posedge clk_i); while (~core_sleep || errors == -1);
+    cnt_rd = tb_redmule_verilator.i_dummy_dmemory.cnt_rd[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[8];
+    cnt_wr = tb_redmule_verilator.i_dummy_dmemory.cnt_wr[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[8];
     $display("[TB] - cnt_rd=%-8d", cnt_rd);
     $display("[TB] - cnt_wr=%-8d", cnt_wr);
     if (errors != 0) begin
@@ -408,4 +353,7 @@ module redmule_tb (
 
   end
 
-endmodule  // redmule_tb
+
+
+
+endmodule  // tb_redmule_verilator
