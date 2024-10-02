@@ -1,8 +1,16 @@
 # ISOLDE
+First time, install toolchain
+
 ```sh
-. ./eth.sh
+make -f Makefile.tools
 ```
+otherwise:  
+```sh
+. ./eth.sh 
+```
+
 ## build simulation
+top module can be configured in cmd line,VLT_TOP_MODULE=<top module name>, it defaults to **redmule_tb**, see [Makefile.verilator](Makefile.verilator)
 ```sh
 make verilate
 ```
@@ -11,7 +19,9 @@ make verilate
 make veri-clean
 ```
 ## test simulation
+only works if VLT_TOP_MODULE == tb_top_verilator
 ```sh
+make verilate VLT_TOP_MODULE=tb_top_verilator
 make sanity-veri-run
 ```
 Output similar to:    
@@ -29,6 +39,19 @@ CV32E40P is a RISC-V ISA compliant core with the following attributes:
 TOP.tb_top_verilator @ 130110: EXIT SUCCESS
 - /home/uic52463/hdd2/isolde-project/redmule/tb/core/tb_top_verilator.sv:83: Verilog $finish
 ```
+## build sw
+get a clean slate
+```sh
+make sw-clean
+```
+```sh
+make golden
+make sw-build
+```
+the following files have been generated:  
+* vsim/stim_instr.txt
+* vsim/stim_data.txt
+
 # RedMulE
 RedMulE (**Red**uced-Precision Matrix **Mul**tiplication **E**ngine) is an open-source hardware accelerator based on the [HWPE](https://hwpe-doc.readthedocs.io/en/latest/index.html) template. It is designed to accelerate General Matrix-Matrix Operations (GEMM-Ops) on Floating-Point (FP) FP16 and FP8 input matrices. The keyword GEMM-Ops includes all the matrix operations of the kind **Z = (X op1 W) op2 Z**. The operators *op1* and *op2* can be any of those grouped in the following table:
 
