@@ -1,135 +1,86 @@
-# Support for local override
-BENDER		   ?= bender
-DASM 	       ?= spike-dasm
-VLT			   ?= verilator
-CC             := gcc-10
-CXX			   := g++-10
-
-VERILATOR_ROOT ?= $(dir $(shell which $(VLT)))/../share/verilator
-VLT_ROOT	   ?= ${VERILATOR_ROOT}
-
-MATCH_END := '/+incdir+/ s/$$/\/*\/*/'
-MATCH_BGN := 's/+incdir+//g'
-SED_SRCS  := sed -e ${MATCH_END} -e ${MATCH_BGN}
-TB_SRCS   := $(wildcard ${ROOT}/hw/ip/test/*.sv)
-TB_DIR    := ${mkfile_path}/test/cc
-
-
-FESVR_VERSION  ?= 35d50bc40e59ea1d5566fbd3d9226023821b1bb6
-
-VLT_BUILDDIR := $(mkfile_path)/work-vlt
-VLT_FESVR     = $(mkfile_path)/riscv-isa-sim
-VLT_FLAGS    += --cc
-VLT_FLAGS    += --exe 
-VLT_FLAGS    += --trace
-VLT_FLAGS    += -DREDMULE_HWPE_SYNTH
-VLT_FLAGS    += -Wno-BLKANDNBLK
-VLT_FLAGS    += -Wno-LITENDIAN
-VLT_FLAGS    += -Wno-CASEINCOMPLETE
-VLT_FLAGS    += -Wno-CMPCONST
-VLT_FLAGS    += -Wno-WIDTH
-VLT_FLAGS    += -Wno-WIDTHCONCAT
-VLT_FLAGS    += -Wno-UNSIGNED
-VLT_FLAGS    += -Wno-UNOPTFLAT
-VLT_FLAGS    += -Wno-fatal
-VLT_FLAGS    += --timing
-VLT_FLAGS    += --unroll-count 1024
-#VLT_BENDER   += -t redmule_hwpe
-#VLT_BENDER   += -t redmule_test_hwpe
-#VLT_SOURCES  := $(shell ${BENDER} script flist ${VLT_BENDER} | ${SED_SRCS})
-VLT_CFLAGS   += -std=c++17 -pthread
-VLT_CFLAGS   += -g -I ${VLT_BUILDDIR} -I $(VLT_ROOT)/include -I $(VLT_ROOT)/include/vltstd -I $(VLT_FESVR)/include -I $(TB_DIR)
-
-
-
 #############
 # Verilator #
 #############
-TARGET       =  redmule
-BIN_DIR      ?= bin
 
-VLT_TOP_MODULE = redmule_tb
+VLT_TOP_MODULE ?= redmule_tb
+#VLT_TOP_MODULE = tb_top_verilator
 
-###############
-# C testbench #
-###############
-VLT_CC_SOURCES += \
-	${TB_DIR}/Sim.cc \
-	${TB_DIR}/sim_main.cc
+VERI_LOG_DIR      ?= $(mkfile_path)/log/$(VLT_TOP_MODULE)
+SIM_TEST_INPUTS   ?= $(mkfile_path)/vsim
+TEST              ?= redmule
+BIN_DIR           = $(mkfile_path)/bin/$(VLT_TOP_MODULE)
+VERI_FLAGS        +=
 
-.PHONY: clean-vlt 
+
+
+.PHONY: veri-clean 
 
 # Clean all build directories and temporary files for Questasim simulation
-clean-vlt: 
-	rm -fr $(VLT_BUILDDIR)
-	rm -fv $(BIN_DIR)/$(TARGET).vlt
-	
-$(VLT_BUILDDIR)/files: Bender.yml
-	mkdir -p $(dir $@)
+veri-clean: 
+	rm -f manifest.flist
+	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(BIN_DIR) $@
+
+verilate: $(BIN_DIR)/verilator_executable
+
+manifest.flist: Bender.yml
 	$(BENDER) script verilator $(common_targs) $(VLT_BENDER)  >$@
 	touch $@
 
-$(BIN_DIR)/$(TARGET).vlt: $(VLT_BUILDDIR)/files  ${VLT_CC_SOURCES} riscv-isa-sim/lib/libfesvr.a
+$(BIN_DIR)/verilator_executable: manifest.flist
 	mkdir -p $(dir $@)
-	$(VLT) $(VLT_FLAGS) -Mdir $(VLT_BUILDDIR) \
-		-f $(VLT_BUILDDIR)/files \
-		-CFLAGS "$(VLT_CFLAGS)" \
-		-LDFLAGS "-L${mkfile_path}/riscv-isa-sim/lib -lfesvr -lpthread" \
-		-o ../$@ --top-module $(VLT_TOP_MODULE)  $(VLT_CC_SOURCES)
-	$(MAKE) -C $(VLT_BUILDDIR) -j $(shell nproc) -f V${VLT_TOP_MODULE}.mk
+	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(BIN_DIR) VLT_TOP_MODULE=$(VLT_TOP_MODULE) verilate
 
-run-test: $(BIN_DIR)/$(TARGET).vlt
-	cd $(VSIM_DIR) &&          \
-	../$(BIN_DIR)/$(TARGET).vlt 
+sanity-veri-run: VLT_TOP_MODULE := tb_top_verilator
+sanity-veri-run:
+	mkdir -p $(VERI_LOG_DIR)
+	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
+	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(BIN_DIR) VLT_TOP_MODULE=$(VLT_TOP_MODULE) TEST=hello-world run-test
+	mv sim/core/verilator_tb.vcd $(VERI_LOG_DIR)/
 
-rebuild-vlt: sw-build clean-vlt run-test
+.PHONY: run-test
+run-test: $(BIN_DIR)/verilator_executable 
+	@echo "$(BANNER)"
+	@echo "* Running with Verilator: "
+	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
+	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
+	@echo "$(BANNER)"
+	mkdir -p $(VERI_LOG_DIR)
+	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
+	$(BIN_DIR)/verilator_executable  \
+		$(VERI_FLAGS) \
+		"+firmware=$(SIM_TEST_INPUTS)/stim_instr.txt" \
+		"+simdata=$(SIM_TEST_INPUTS)/stim_data.txt" \
+		| tee $(VERI_LOG_DIR)/$(TEST).log
+	mv verilator_tb.vcd $(VERI_LOG_DIR)/
 
+
+.PHONY: veri-test
+veri-test: $(BIN_DIR)/verilator_executable 
+	@echo "$(BANNER)"
+	@echo "* Running with Verilator: "
+	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
+	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
+	@echo "$(BANNER)"
+	mkdir -p $(VERI_LOG_DIR)
+	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
+	$(BIN_DIR)/verilator_executable  \
+		$(VERI_FLAGS) \
+		"+firmware=$(SIM_TEST_INPUTS)/stim_instr.txt" \
+		"+simdata=$(SIM_TEST_INPUTS)/stim_data.txt" \
+		| tee $(VERI_LOG_DIR)/$(TEST).log
+	mv verilator_tb.vcd $(VERI_LOG_DIR)/	
+
+	
 .PHONY: help
 
 help:
-	@echo "available targets:"
-	@echo $(VLT_FESVR)/${FESVR_VERSION}_unzip
-	@echo riscv-isa-sim/lib/libfesvr.a
-	@echo $(BIN_DIR)/$(TARGET).vlt
-	@echo $(VLT_BUILDDIR)/files
-	@echo $(BIN)
+	@echo "verilator related available targets:"
+	@echo verilate                                 -- builds verilator simulation, available here: $(BIN_DIR)/verilator_executable
+	@echo run-test                                 -- runs the test
+	@echo veri-clean                               -- gets a clean slate for simulation
+	@echo verilate VLT_TOP_MODULE=tb_top_verilator
+	@echo sanity-veri-run                          -- smoke test for $(BIN_DIR)/verilator_executable, only with  VLT_TOP_MODULE=tb_top_verilator
 
 
-
-
-# Build fesvr seperately for verilator since this might use different compilers
-# and libraries than modelsim/vcs and
-$(VLT_FESVR)/${FESVR_VERSION}_unzip:
-	mkdir -p $(dir $@)
-	wget -O $(dir $@)/${FESVR_VERSION} https://github.com/riscv/riscv-isa-sim/tarball/${FESVR_VERSION}
-	tar xfm $(dir $@)${FESVR_VERSION} --strip-components=1 -C $(dir $@)
-	patch -d $(dir $@) -p1 < $(mkfile_path)/util/patches/riscv-isa-sim/fesrv.patch
-	touch $@
-
-riscv-isa-sim/lib/libfesvr.a: $(VLT_FESVR)/${FESVR_VERSION}_unzip
-	cd $(dir $<)/ && ./configure --prefix `pwd` \
-        CC=${CC} CXX=${CXX} CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
-	$(MAKE) -C $(dir $<) install-config-hdrs install-hdrs libfesvr.a
-	mkdir -p $(dir $@)
-	cp $(dir $<)libfesvr.a $@
-
-
-
-
-########
-# Util #
-########
-logs/trace_hart_%.txt: logs/trace_hart_%.dasm ${ROOT}/util/gen_trace.py
-	$(DASM) < $< | $(PYTHON) ${ROOT}/util/gen_trace.py > $@
-
-traces: $(shell (ls logs/trace_hart_*.dasm 2>/dev/null | sed 's/\.dasm/\.txt/') || echo "")
-
-# make annotate
-# Generate source-code interleaved traces for all harts. Reads the binary from
-# the logs/.rtlbinary file that is written at start of simulation in the vsim script
-logs/trace_hart_%.s: logs/trace_hart_%.txt ${ROOT}/util/trace/annotate.py
-	$(PYTHON) ${ROOT}/util/trace/annotate.py -q -o $@ $(BINARY) $<
-BINARY ?= $(shell cat logs/.rtlbinary)
-annotate: $(shell (ls logs/trace_hart_*.dasm 2>/dev/null | sed 's/\.dasm/\.s/') || echo "")
 
 
