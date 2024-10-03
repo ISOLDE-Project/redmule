@@ -16,3 +16,4 @@ log/
 verilator/
 simulation_results/
 Bender.lock
+*cobj_dir/
