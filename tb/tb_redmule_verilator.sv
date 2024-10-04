@@ -26,11 +26,22 @@ module tb_redmule_verilator (
   parameter int unsigned PULP_XPULP = 1;
   parameter int unsigned FPU = 0;
   parameter int unsigned PULP_ZFINX = 0;
-  parameter logic [31:0] BASE_ADDR = 32'h1c000000;
+  //parameter logic [31:0] BASE_ADDR = 32'h1c000000;
+  parameter logic [31:0] IMEM_ADDR = 32'h1c000000;
+  parameter logic [31:0] DMEM_ADDR = 32'h1c010000;
+  parameter logic [31:0] SMEM_ADDR = 32'h1c040000;
+  parameter logic [31:0] BOOT_ADDR = 32'h1c000080;
+  // Base address
+  parameter logic [31:0] REDMULE_BASE_ADD = 32'h00001000;
   parameter logic [31:0] HWPE_ADDR_BASE_BIT = 20;
+  parameter string STIM_INSTR = "./stim_instr.txt";
+  parameter string STIM_DATA = "./stim_data.txt";
 
   // global signals
+  //logic clk_i;
+  //logic rst_ni;
   logic test_mode;
+  //logic fetch_enable_i;
   logic [31:0] core_boot_addr;
   logic redmule_busy;
 
@@ -84,11 +95,31 @@ module tb_redmule_verilator (
   localparam TA = 0.2ns;  // application time
   localparam TT = 0.8ns;  // test time
 
+  // // Performs one entire clock cycle.
+  // task cycle;
+  //   clk_i <= #(TCP / 2) 0;
+  //   clk_i <= #TCP 1;
+  //   #TCP;
+  // endtask
 
+  // // The following task schedules the clock edges for the next cycle and
+  // // advances the simulation time to that cycles test time (localparam TT)
+  // // according to ATI timings.
+  // task cycle_start;
+  //   clk_i <= #(TCP / 2) 0;
+  //   clk_i <= #TCP 1;
+  //   #TT;
+  // endtask
+
+  // // The following task finishes a clock cycle previously started with
+  // // cycle_start by advancing the simulation time to the end of the cycle.
+  // task cycle_end;
+  //   #(TCP - TT);
+  // endtask
 
   // bindings
   always_comb begin : bind_periph
-    periph_req  = data_req & data_addr[HWPE_ADDR_BASE_BIT];
+    periph_req  = data_req & (data_addr>=REDMULE_BASE_ADD) &(data_addr<IMEM_ADDR);
     periph_add  = data_addr;
     periph_wen  = ~data_we;
     periph_be   = data_be;
@@ -108,7 +139,7 @@ module tb_redmule_verilator (
   end
 
   always_comb begin : bind_stack
-    stack[0].req  = data_req & (data_addr[31:24] == '0) & ~data_addr[HWPE_ADDR_BASE_BIT];
+    stack[0].req  = data_req & (data_addr>=SMEM_ADDR) &(data_addr<SMEM_ADDR+32'h30000);
     stack[0].add  = data_addr;
     stack[0].wen  = ~data_we;
     stack[0].be   = data_be;
@@ -131,7 +162,7 @@ module tb_redmule_verilator (
     assign tcdm_r_data[ii]  = tcdm[ii].r_data;
     assign tcdm_r_valid[ii] = tcdm[ii].r_valid;
   end
-  assign tcdm[MP].req  = data_req & (data_addr[31:24] != '0) & (data_addr[31:24] != 8'h80) & ~data_addr[HWPE_ADDR_BASE_BIT];
+  assign tcdm[MP].req  = data_req & (data_addr>=DMEM_ADDR) &(data_addr<DMEM_ADDR+32'h30000);
   assign tcdm[MP].add = data_addr;
   assign tcdm[MP].wen = ~data_we;
   assign tcdm[MP].be = data_be;
@@ -183,7 +214,7 @@ module tb_redmule_verilator (
   tb_dummy_memory #(
       .MP         (MP + 1),
       .MEMORY_SIZE(MEMORY_SIZE),
-      .BASE_ADDR  (32'h1c010000),
+      .BASE_ADDR  (DMEM_ADDR),
       .PROB_STALL (PROB_STALL),
       .TCP        (TCP),
       .TA         (TA),
@@ -201,7 +232,7 @@ module tb_redmule_verilator (
   tb_dummy_memory #(
       .MP         (1),
       .MEMORY_SIZE(MEMORY_SIZE),
-      .BASE_ADDR  (BASE_ADDR),
+      .BASE_ADDR  (IMEM_ADDR),
       .PROB_STALL (0),
       .TCP        (TCP),
       .TA         (TA),
@@ -219,7 +250,7 @@ module tb_redmule_verilator (
   tb_dummy_memory #(
       .MP         (1),
       .MEMORY_SIZE(STACK_MEMORY_SIZE),
-      .BASE_ADDR  (BASE_ADDR),
+      .BASE_ADDR  (SMEM_ADDR),
       .PROB_STALL (0),
       .TCP        (TCP),
       .TA         (TA),
@@ -291,6 +322,24 @@ module tb_redmule_verilator (
       .core_sleep_o(core_sleep)
   );
 
+  //initial begin
+  //   clk_i   <= 1'b0;
+  //   rst_ni <= 1'b0;
+  //   core_boot_addr = 32'h0;
+  //   for (int i = 0; i < 20; i++) cycle();
+  //   rst_ni <= #TA 1'b1;
+  //  core_boot_addr = 32'h1C000084;
+
+  //   for (int i = 0; i < 10; i++) cycle();
+  //   rst_ni <= #TA 1'b0;
+  //   for (int i = 0; i < 10; i++) cycle();
+  //   rst_ni <= #TA 1'b1;
+
+  //   while (1) begin
+  //     cycle();
+  //   end
+
+  //end
 
   initial begin : load_prog
     automatic string firmware;
@@ -314,7 +363,7 @@ module tb_redmule_verilator (
       $display("No simdata specified");
       $finish;
     end
-    core_boot_addr = 32'h1C000084;
+    core_boot_addr = BOOT_ADDR;
   end
 
   integer f_t0, f_t1;
@@ -336,7 +385,19 @@ module tb_redmule_verilator (
     int cnt_rd, cnt_wr;
 
     test_mode = 1'b0;
+    //fetch_enable_i = 1'b0;
 
+
+    // load instruction memory
+    //    $readmemh(STIM_INSTR, tb_redmule_verilator.i_dummy_imemory.memory);
+    //    $readmemh(STIM_DATA, tb_redmule_verilator.i_dummy_dmemory.memory);
+
+    // #(100 * TCP);
+    // fetch_enable_i = 1'b1;
+
+    // #(100 * TCP);
+    // end WFI + returned != -1 signals end-of-computation
+    //while (~core_sleep || errors == -1) #(TCP);
     do @(posedge clk_i); while (~core_sleep || errors == -1);
     cnt_rd = tb_redmule_verilator.i_dummy_dmemory.cnt_rd[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[8];
     cnt_wr = tb_redmule_verilator.i_dummy_dmemory.cnt_wr[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[8];
@@ -352,8 +413,5 @@ module tb_redmule_verilator (
     $finish;
 
   end
-
-
-
 
 endmodule  // tb_redmule_verilator

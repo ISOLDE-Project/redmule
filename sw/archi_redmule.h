@@ -59,7 +59,7 @@
 #define ARRAY_WIDTH 12 /* Superior limit is ARRAY_HEIGHT*PIPE_REGS */
 
 // Base address
-#define REDMULE_BASE_ADD 0x00100000
+#define REDMULE_BASE_ADD 0x00001000
 
 // Commands
 #define REDMULE_TRIGGER 0x00
