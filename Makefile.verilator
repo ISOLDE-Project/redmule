@@ -19,8 +19,10 @@ VLT_TOP_MODULE ?= redmule_tb
 
 
 # Test-Program directores.
-TEST_TEST_DIR    = $(CORE_V_VERIF)/sw
-TEST_FILES         ?= redmule.c
+
+TEST               ?= redmule
+TEST_FILES         ?= $(TEST).c
+TEST_TEST_DIR     = $(CORE_V_VERIF)/sw
 
 #  -Core Firmware and the RISCV GCC Toolchain (SDK)
 
@@ -35,7 +37,6 @@ SIM_BSP_RESULTS          = $(CORE_V_VERIF)/sw/build/bsp
 #####
 VERI_LOG_DIR      ?= $(mkfile_path)/log/$(VLT_TOP_MODULE)
 SIM_TEST_INPUTS   ?= $(mkfile_path)/vsim
-TEST              ?= redmule
 BIN_DIR           = $(mkfile_path)/bin/$(VLT_TOP_MODULE)
 VERI_FLAGS        +=
 
@@ -138,11 +139,11 @@ help:
 
 #test_app.elf: $(SIM_TEST_INPUTS)/$(TEST).elf		
 
-sim-inputs: $(SIM_BSP_RESULTS)/test_app.hex
-	rm -fr   $(SIM_TEST_INPUTS)
-	mkdir -p $(SIM_TEST_INPUTS)
-	mv $(SIM_BSP_RESULTS)/*.hex $(SIM_TEST_INPUTS)/$(TEST).hex 
-	mv $(SIM_BSP_RESULTS)/*.elf $(SIM_TEST_INPUTS)/$(TEST).elf
-	objcopy --srec-len 1 --output-target=srec $(SIM_TEST_INPUTS)/$(TEST).elf $(SIM_TEST_INPUTS)/$(TEST).s19
+
+sim-inputs: $(VSIM_DIR) $(SIM_TEST_INPUTS)/$(TEST).hex 
+#	rm -fr   $(SIM_TEST_INPUTS)
+#	mv $(SIM_BSP_RESULTS)/*.hex $(SIM_TEST_INPUTS)/$(TEST).hex 
+#	mv $(SIM_BSP_RESULTS)/*.elf $(SIM_TEST_INPUTS)/$(TEST).elf
+	objcopy --srec-len 1 --output-target=srec  --srec-forceS3 $(SIM_TEST_INPUTS)/$(TEST).elf $(SIM_TEST_INPUTS)/$(TEST).s19
 	scripts/parse_s19.pl $(SIM_TEST_INPUTS)/$(TEST).s19 > $(SIM_TEST_INPUTS)/$(TEST).txt 2>$(BUILD_DIR)/parse_s19.pl.log
 	python scripts/s19tomem.py $(SIM_TEST_INPUTS)/$(TEST).txt  $(STIM_INSTR) $(STIM_DATA) 
