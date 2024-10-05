@@ -11,9 +11,10 @@ golden-model/venv/
 sw/inc/
 verilator_tb.vcd
 vsim*/
-log/
+log*/
 *.tar.gz
 verilator/
 simulation_results/
 Bender.lock
 *cobj_dir/
+*.sv.*

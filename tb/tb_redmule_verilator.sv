@@ -23,7 +23,7 @@ module tb_redmule_verilator (
   parameter int unsigned DW = redmule_pkg::DATA_W;
   parameter int unsigned MP = DW / 32;
   parameter int unsigned MEMORY_SIZE = 1116496;
-  parameter int unsigned STACK_MEMORY_SIZE = 1116496;
+  parameter int unsigned STACK_MEMORY_SIZE = 192 * 1024;
   parameter int unsigned PULP_XPULP = 1;
   parameter int unsigned FPU = 0;
   parameter int unsigned PULP_ZFINX = 0;
@@ -156,7 +156,7 @@ module tb_redmule_verilator (
                                         stack[0].r_valid ? stack[0].r_data  :
                                                            tcdm[MP].r_valid ? tcdm[MP].r_data : '0;
   assign data_rvalid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | other_r_valid;
-`ifndef MEM_UNIT_TEST
+
   redmule_wrap #(
       .ID_WIDTH(ID),
       .N_CORES (NC),
@@ -189,11 +189,25 @@ module tb_redmule_verilator (
       .periph_r_valid_o(periph_r_valid),
       .periph_r_id_o   (periph_r_id)
   );
-`endif
 
-`ifndef tb_dummy_memory
-
-  tb_tcdm_verilator #(
+  // tb_dummy_memory #(
+  //     .MP         (MP + 1),
+  //     .MEMORY_SIZE(MEMORY_SIZE),
+  //     .BASE_ADDR  (DMEM_ADDR),
+  //     .PROB_STALL (PROB_STALL),
+  //     .TCP        (TCP),
+  //     .TA         (TA),
+  //     .TT         (TT)
+  // ) i_dummy_dmemory (
+  //     .clk_i        (clk_i),
+  //     .rst_ni       (rst_ni),
+  //     .clk_delayed_i('0),
+  //     .randomize_i  (1'b0),
+  //     .enable_i     (1'b1),
+  //     .stallable_i  (1'b1),
+  //     .tcdm         (tcdm)
+  // );
+    tb_tcdm_verilator #(
       .MP         (MP + 1),
       .MEMORY_SIZE(MEMORY_SIZE)
   ) i_dummy_dmemory (
@@ -202,8 +216,25 @@ module tb_redmule_verilator (
       .enable_i(1'b1),
       .tcdm    (tcdm)
   );
+  // tb_dummy_memory #(
+  //     .MP         (1),
+  //     .MEMORY_SIZE(MEMORY_SIZE),
+  //     .BASE_ADDR  (IMEM_ADDR),
+  //     .PROB_STALL (0),
+  //     .TCP        (TCP),
+  //     .TA         (TA),
+  //     .TT         (TT)
+  // ) i_dummy_imemory (
+  //     .clk_i        (clk_i),
+  //     .rst_ni       (rst_ni),
+  //     .clk_delayed_i('0),
+  //     .randomize_i  (1'b0),
+  //     .enable_i     (1'b1),
+  //     .stallable_i  (1'b0),
+  //     .tcdm         (instr)
+  // );
 
-  tb_tcdm_verilator #(
+    tb_tcdm_verilator #(
       .MP         (1),
       .MEMORY_SIZE(MEMORY_SIZE)
   ) i_dummy_imemory (
@@ -212,54 +243,34 @@ module tb_redmule_verilator (
       .enable_i(1'b1),
       .tcdm    (instr)
   );
-`else
-  tb_dummy_memory #(
-      .MP         (MP + 1),
-      .MEMORY_SIZE(MEMORY_SIZE),
-      .BASE_ADDR  (DMEM_ADDR),
-      .PROB_STALL (PROB_STALL),
-      .TCP        (TCP),
-      .TA         (TA),
-      .TT         (TT)
-  ) i_dummy_dmemory (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .clk_delayed_i('0),
-      .randomize_i  (1'b0),
-      .enable_i     (1'b1),
-      .stallable_i  (1'b1),
-      .tcdm         (tcdm)
-  );
 
-  tb_dummy_memory #(
+  // tb_dummy_memory #(
+  //     .MP         (1),
+  //     .MEMORY_SIZE(STACK_MEMORY_SIZE),
+  //     .BASE_ADDR  (SMEM_ADDR),
+  //     .PROB_STALL (0),
+  //     .TCP        (TCP),
+  //     .TA         (TA),
+  //     .TT         (TT)
+  // ) i_dummy_stack_memory (
+  //     .clk_i        (clk_i),
+  //     .rst_ni       (rst_ni),
+  //     .clk_delayed_i('0),
+  //     .randomize_i  (1'b0),
+  //     .enable_i     (1'b1),
+  //     .stallable_i  (1'b0),
+  //     .tcdm         (stack)
+  // );
+    tb_tcdm_verilator #(
       .MP         (1),
-      .MEMORY_SIZE(MEMORY_SIZE),
-      .BASE_ADDR  (IMEM_ADDR),
-      .PROB_STALL (0),
-      .TCP        (TCP),
-      .TA         (TA),
-      .TT         (TT)
-  ) i_dummy_imemory (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .clk_delayed_i('0),
-      .randomize_i  (1'b0),
-      .enable_i     (1'b1),
-      .stallable_i  (1'b0),
-      .tcdm         (instr)
-  );
-`endif
-
-  tb_tcdm_verilator #(
-      .MP         (1),
-      .MEMORY_SIZE(STACK_MEMORY_SIZE)
+      .MEMORY_SIZE(32'h30000)
   ) i_dummy_stack_memory (
       .clk_i   (clk_i),
       .rst_ni  (rst_ni),
       .enable_i(1'b1),
       .tcdm    (stack)
   );
-`ifndef MEM_UNIT_TEST
+
   cv32e40p_core #(
       .PULP_XPULP(PULP_XPULP),
       .FPU       (FPU),
@@ -316,10 +327,6 @@ module tb_redmule_verilator (
       .fetch_enable_i(fetch_enable_i),
       .core_sleep_o(core_sleep)
   );
-`endif
-
-
-
 
 
   initial begin : load_prog
@@ -331,11 +338,7 @@ module tb_redmule_verilator (
 
       $display("[TESTBENCH] @ t=%0t: loading firmware %0s", $time, firmware);
       // load instruction memory
-`ifndef tb_dummy_memory
-      $readmemh(firmware, tb_redmule_verilator.i_dummy_imemory.mem);
-`else
       $readmemh(firmware, tb_redmule_verilator.i_dummy_imemory.memory);
-`endif
     end else begin
       $display("No firmware specified");
       $finish;
@@ -343,25 +346,27 @@ module tb_redmule_verilator (
 
     if ($value$plusargs("simdata=%s", simdata)) begin
       $display("[TESTBENCH] @ t=%0t: loading simdata %0s", $time, simdata);
-`ifndef tb_dummy_memory
-      $readmemh(simdata, tb_redmule_verilator.i_dummy_dmemory.mem);
-`else
       $readmemh(simdata, tb_redmule_verilator.i_dummy_dmemory.memory);
-`endif
     end else begin
       $display("No simdata specified");
       $finish;
     end
     core_boot_addr = BOOT_ADDR;
-
-
-
   end
 
+  integer f_t0, f_t1;
+  integer f_x, f_W, f_y, f_tau;
+  logic start;
 
-
-`ifndef MEM_UNIT_TEST
-
+  int   errors = -1;
+  always_ff @(posedge clk_i) begin
+    if ((data_addr == MMADDR_EXIT) && (data_we & data_req == 1'b1)) begin
+      errors = data_wdata;
+    end
+    if ((data_addr == MMADDR_PRINT) && (data_we & data_req == 1'b1)) begin
+      $write("%c", data_wdata[31:24]);
+    end
+  end
 
   initial begin
     integer id;
@@ -370,6 +375,10 @@ module tb_redmule_verilator (
     test_mode = 1'b0;
 
     do @(posedge clk_i); while (~core_sleep || errors == -1);
+    //cnt_rd = tb_redmule_verilator.i_dummy_dmemory.cnt_rd[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[8];
+    //cnt_wr = tb_redmule_verilator.i_dummy_dmemory.cnt_wr[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[8];
+    //$display("[TB] - cnt_rd=%-8d", cnt_rd);
+    //$display("[TB] - cnt_wr=%-8d", cnt_wr);
     if (errors != 0) begin
       $error("[TB] - errors=%08x", errors);
       $display("[TB] - Fail!");
@@ -380,97 +389,5 @@ module tb_redmule_verilator (
     $finish;
 
   end
-
-  int errors = -1;
-  always_ff @(posedge clk_i) begin
-    if ((data_addr == MMADDR_EXIT) && (data_we & data_req == 1'b1)) begin
-      errors = data_wdata;
-    end
-    if ((data_addr == MMADDR_PRINT) && (data_we & data_req == 1'b1)) begin
-      $write("%c", data_wdata);
-    end
-  end
-
-`else
-  generate
-    for (genvar i = 0; i < MP + 1; i++) begin
-      always_ff @(posedge clk_i) begin
-        repeat (24) @(posedge clk_i);
-        //// Add write and read tests here
-        $display("[TESTBENCH] @ t=%0t: starting tcdm read data tests", $time);
-
-        ///
-
-        for (int j = 0; j < 4; j++) begin
-          tcdm[i].add <= DMEM_ADDR + 4 * j;
-          tcdm[i].req <= 1;
-          tcdm[i].wen <= 1;
-          @(posedge clk_i);
-          tcdm[i].req <= 0;
-          do @(posedge clk_i); while (!tcdm[i].r_valid);
-          //wait (data_rvalid == 1);
-          tcdm[i].wen <= 1;
-          $display("[TB] - [%d] @ %08x: %08x", i, tcdm[i].add, tcdm[i].r_data);
-        end
-
-      end
-    end
-  endgenerate
-
-  always_ff @(posedge clk_i) begin
-    repeat (12) @(posedge clk_i);
-    write_data_tcdm(DMEM_ADDR, 32'hFACEBACE);
-    //// Add write and read tests here
-    $display("[TESTBENCH] @ t=%0t: starting write/read data tests", $time);
-
-    for (int i = 0; i < 10; i++) read_data_instr(BOOT_ADDR + 4 * i);  // Read from Data Memory
-
-
-    ///
-
-    repeat (12) @(posedge clk_i);
-
-
-    $display("[TESTBENCH] @ t=%0t: write/read data tests completed", $time);
-    $finish;
-  end
-
-
-  task write_data_tcdm(input logic [31:0] w_addr, input logic [31:0] w_data);
-
-    tcdm[0].add  <= w_addr;
-    tcdm[0].data <= w_data;
-    tcdm[0].be   <= 4'b0101;
-    tcdm[0].req  <= 1;
-    tcdm[0].wen  <= 0;
-    @(posedge clk_i);
-    tcdm[0].req <= 0;
-    do @(posedge clk_i); while (!data_rvalid);
-    //wait (data_rvalid == 1);
-    tcdm[0].wen <= 1;
-    //$display("[TB] - data_wdata=%08x data_rdata=%08x", data_wdata, data_rdata);
-
-  endtask
-
-  task read_data_instr(input logic [31:0] r_addr);
-
-    instr[0].add <= r_addr;
-    instr[0].req <= 1;
-    instr[0].wen <= 1;
-    @(posedge clk_i);
-    instr[0].req <= 0;
-    do @(posedge clk_i); while (!instr[0].r_valid);
-    //wait (data_rvalid == 1);
-    instr[0].wen <= 1;
-    $display("[TB] -  @%08x: %08x", instr[0].add, instr[0].r_data);
-
-
-  endtask
-
-
-
-
-`endif
-
 
 endmodule  // tb_redmule_verilator

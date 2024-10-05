@@ -15,7 +15,7 @@ module tb_tcdm_verilator #(
           hwpe_stream_intf_tcdm.slave tcdm    [MP-1:0]
 );
 
-  logic [   7:0]       mem            [MEMORY_SIZE];
+  logic [   7:0]       memory            [MEMORY_SIZE];
 
   logic [MP-1:0][31:0] write_data;
 
@@ -29,10 +29,10 @@ module tb_tcdm_verilator #(
       assign tcdm[i].r_valid = tcdm_r_valid_d[i];
 
       always_comb begin
-        write_data[i][7:0]   = tcdm[i].be[0] ? tcdm[i].data[7:0] : mem[tcdm[i].add];
-        write_data[i][15:8]  = tcdm[i].be[1] ? tcdm[i].data[15:8] : mem[tcdm[i].add+1];
-        write_data[i][23:16] = tcdm[i].be[2] ? tcdm[i].data[23:16] : mem[tcdm[i].add+2];
-        write_data[i][31:24] = tcdm[i].be[3] ? tcdm[i].data[31:24] : mem[tcdm[i].add+3];
+        write_data[i][7:0]   = tcdm[i].be[0] ? tcdm[i].data[7:0] : memory[tcdm[i].add];
+        write_data[i][15:8]  = tcdm[i].be[1] ? tcdm[i].data[15:8] : memory[tcdm[i].add+1];
+        write_data[i][23:16] = tcdm[i].be[2] ? tcdm[i].data[23:16] : memory[tcdm[i].add+2];
+        write_data[i][31:24] = tcdm[i].be[3] ? tcdm[i].data[31:24] : memory[tcdm[i].add+3];
 
       end
 
@@ -43,19 +43,19 @@ module tb_tcdm_verilator #(
           tcdm_r_valid_d[i] <= '0;
         end else begin
           if (tcdm[i].req & ~tcdm[i].wen) begin  // Write
-            mem[tcdm[i].add]   <= write_data[i][7:0];
-            mem[tcdm[i].add+1] <= write_data[i][15:8];
-            mem[tcdm[i].add+2] <= write_data[i][23:16];
-            mem[tcdm[i].add+3] <= write_data[i][31:24];
+            memory[tcdm[i].add]   <= write_data[i][7:0];
+            memory[tcdm[i].add+1] <= write_data[i][15:8];
+            memory[tcdm[i].add+2] <= write_data[i][23:16];
+            memory[tcdm[i].add+3] <= write_data[i][31:24];
             //
             tcdm_r_data_d[i]   <= write_data[i];
             tcdm_r_valid_d[i]  <= 1'b1;
           end else begin
             if (tcdm[i].req & tcdm[i].wen) begin  // Read
-              tcdm_r_data_d[i][7:0] <= mem[tcdm[i].add];
-              tcdm_r_data_d[i][15:8] <= mem[tcdm[i].add+1];
-              tcdm_r_data_d[i][23:16] <= mem[tcdm[i].add+2];
-              tcdm_r_data_d[i][31:24] <= mem[tcdm[i].add+3];
+              tcdm_r_data_d[i][7:0] <= memory[tcdm[i].add];
+              tcdm_r_data_d[i][15:8] <= memory[tcdm[i].add+1];
+              tcdm_r_data_d[i][23:16] <= memory[tcdm[i].add+2];
+              tcdm_r_data_d[i][31:24] <= memory[tcdm[i].add+3];
               tcdm_r_valid_d[i] <= 1'b1;
             end else begin
               tcdm_r_data_d[i]  <= '0;
