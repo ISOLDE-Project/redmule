@@ -18,6 +18,12 @@ make verilate
 ```sh
 make veri-clean
 ```
+### build and run simulation   
+```sh
+make VLT_TOP_MODULE=tb_redmule_verilator veri-clean verilate  hw-clean  clean-test-programs sim-inputs run-test
+make VLT_TOP_MODULE=tb_redmule_verilator  veri-clean verilate run-test
+make VLT_TOP_MODULE=tb_redmule_verilator   run-test
+```
 ## test simulation
 only works if VLT_TOP_MODULE == tb_top_verilator
 ```sh

@@ -77,8 +77,25 @@ run-test: $(BIN_DIR)/verilator_executable
 	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
 	$(BIN_DIR)/verilator_executable  \
 		$(VERI_FLAGS) \
-		"+firmware=$(SIM_TEST_INPUTS)/stim_instr.txt" \
-		"+simdata=$(SIM_TEST_INPUTS)/stim_data.txt" \
+		"+firmware=$(SIM_TEST_INPUTS)/$(TEST).hex" \
+		"+simdata=$(SIM_TEST_INPUTS)/$(TEST).hex" \
+		| tee $(VERI_LOG_DIR)/$(TEST).log
+	mv verilator_tb.vcd $(VERI_LOG_DIR)/
+
+
+.PHONY: run-test2
+run-test2: $(BIN_DIR)/verilator_executable 
+	@echo "$(BANNER)"
+	@echo "* Running with Verilator: $(BIN_DIR)/verilator_executable "
+	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
+	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
+	@echo "$(BANNER)"
+	mkdir -p $(VERI_LOG_DIR)
+	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
+	$(BIN_DIR)/verilator_executable  \
+		$(VERI_FLAGS) \
+		"+firmware=vsim_ref/vsim/stim_instr.txt" \
+		"+simdata=vsim_ref/vsim/stim_data.txt" \
 		| tee $(VERI_LOG_DIR)/$(TEST).log
 	mv verilator_tb.vcd $(VERI_LOG_DIR)/
 
