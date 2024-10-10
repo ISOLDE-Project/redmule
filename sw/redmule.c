@@ -75,7 +75,7 @@ int main() {
 
   *(int *)0x80000000 = errors;
 
-  tfp_printf("Terminated test with %d errors. See you!\n", errors);
+  printf("Terminated test with %d errors. See you!\n", errors);
 
   return errors;
 }

@@ -364,7 +364,7 @@ module tb_redmule_verilator (
       errors = data_wdata;
     end
     if ((data_addr == MMADDR_PRINT) && (data_we & data_req == 1'b1)) begin
-      $write("%c", data_wdata[31:24]);
+      $write("%c", data_wdata[7:0]);
     end
   end
 
