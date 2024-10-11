@@ -22,6 +22,7 @@ module tb_tcdm_verilator #(
   logic [MP-1:0][31:0] tcdm_r_data_d;
   logic [MP-1:0]       tcdm_r_valid_d;
   logic [MP-1:0][ 1:0] misalignment;
+  logic [  31:0]       index          [     MP-1:0];
 
   // Generate block for each memory port
   generate
@@ -32,10 +33,27 @@ module tb_tcdm_verilator #(
       assign misalignment[i] = tcdm[i].add[1:0];  // Get the last 2 bits of the address
 
       always_comb begin
-        write_data[i][7:0]   = tcdm[i].be[0] ? tcdm[i].data[7:0] : memory[tcdm[i].add];
-        write_data[i][15:8]  = tcdm[i].be[1] ? tcdm[i].data[15:8] : memory[tcdm[i].add+1];
-        write_data[i][23:16] = tcdm[i].be[2] ? tcdm[i].data[23:16] : memory[tcdm[i].add+2];
-        write_data[i][31:24] = tcdm[i].be[3] ? tcdm[i].data[31:24] : memory[tcdm[i].add+3];
+        case (misalignment[i])
+          2'b00: begin
+            index[i] = tcdm[i].add;
+          end
+          2'b01: begin
+            // If addr is ...xx01, read from addr-1, addr, addr+1
+            index[i] = tcdm[i].add - 1;
+          end
+          2'b10: begin
+            // If addr is ...xx10, read from addr-2, addr-1, addr
+            index[i] = tcdm[i].add - 2;
+          end
+          2'b11: begin
+            // If addr is ...xx11, read from addr-3, addr-2, addr-1
+            index[i] = tcdm[i].add - 3;
+          end
+        endcase
+        write_data[i][7:0]   = tcdm[i].be[0] ? tcdm[i].data[7:0] : memory[index[i]];
+        write_data[i][15:8]  = tcdm[i].be[1] ? tcdm[i].data[15:8] : memory[index[i]+1];
+        write_data[i][23:16] = tcdm[i].be[2] ? tcdm[i].data[23:16] : memory[index[i]+2];
+        write_data[i][31:24] = tcdm[i].be[3] ? tcdm[i].data[31:24] : memory[index[i]+3];
       end
 
       // Always block to process read and write operations
@@ -45,54 +63,22 @@ module tb_tcdm_verilator #(
           tcdm_r_valid_d[i] <= '0;
         end else begin
           if (tcdm[i].req & ~tcdm[i].wen) begin  // Write
-            if (misalignment[i] != 2'b00) begin
-              $display("FATAL:  Misaligned write at address %h", tcdm[i].add);
-              $finish;
-            end
-            ;
-            memory[tcdm[i].add] <= write_data[i][7:0];
-            memory[tcdm[i].add+1] <= write_data[i][15:8];
-            memory[tcdm[i].add+2] <= write_data[i][23:16];
-            memory[tcdm[i].add+3] <= write_data[i][31:24];
+
+            memory[index[i]]   <= write_data[i][7:0];
+            memory[index[i]+1] <= write_data[i][15:8];
+            memory[index[i]+2] <= write_data[i][23:16];
+            memory[index[i]+3] <= write_data[i][31:24];
             //
-            tcdm_r_data_d[i] <= write_data[i];
-            tcdm_r_valid_d[i] <= 1'b1;
+            tcdm_r_data_d[i]   <= write_data[i];
+            tcdm_r_valid_d[i]  <= 1'b1;
           end else begin
             if (tcdm[i].req & tcdm[i].wen) begin  // Read
-              // If the address is not aligned, handle the misalignment
-              if (misalignment[i] != 2'b00) begin
-                // $display("Warning: Misaligned access at address %h", tcdm[i].add);
-                // Read the word considering the misalignment
-                case (misalignment[i])
-                  2'b01: begin
-                    // If addr is ...xx01, read from addr-1, addr, addr+1
-                    tcdm_r_data_d[i][7:0]   <= memory[tcdm[i].add-1];
-                    tcdm_r_data_d[i][15:8]  <= memory[tcdm[i].add];
-                    tcdm_r_data_d[i][23:16] <= memory[tcdm[i].add+1];
-                    tcdm_r_data_d[i][31:24] <= memory[tcdm[i].add+2];
-                  end
-                  2'b10: begin
-                    // If addr is ...xx10, read from addr-2, addr-1, addr
-                    tcdm_r_data_d[i][7:0]   <= memory[tcdm[i].add-2];
-                    tcdm_r_data_d[i][15:8]  <= memory[tcdm[i].add-1];
-                    tcdm_r_data_d[i][23:16] <= memory[tcdm[i].add];
-                    tcdm_r_data_d[i][31:24] <= memory[tcdm[i].add+1];
-                  end
-                  2'b11: begin
-                    // If addr is ...xx11, read from addr-3, addr-2, addr-1
-                    tcdm_r_data_d[i][7:0]   <= memory[tcdm[i].add-3];
-                    tcdm_r_data_d[i][15:8]  <= memory[tcdm[i].add-2];
-                    tcdm_r_data_d[i][23:16] <= memory[tcdm[i].add-1];
-                    tcdm_r_data_d[i][31:24] <= memory[tcdm[i].add];
-                  end
-                endcase
-              end else begin
-                // Aligned read
-                tcdm_r_data_d[i][7:0]   <= memory[tcdm[i].add];
-                tcdm_r_data_d[i][15:8]  <= memory[tcdm[i].add+1];
-                tcdm_r_data_d[i][23:16] <= memory[tcdm[i].add+2];
-                tcdm_r_data_d[i][31:24] <= memory[tcdm[i].add+3];
-              end
+
+              tcdm_r_data_d[i][7:0] <= memory[index[i]];
+              tcdm_r_data_d[i][15:8] <= memory[index[i]+1];
+              tcdm_r_data_d[i][23:16] <= memory[index[i]+2];
+              tcdm_r_data_d[i][31:24] <= memory[index[i]+3];
+
               tcdm_r_valid_d[i] <= 1'b1;
             end else begin
               tcdm_r_data_d[i]  <= '0;

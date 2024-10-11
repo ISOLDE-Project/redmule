@@ -47,8 +47,8 @@ int main() {
   int offload_id_tmp, offload_id;
 
   // Enable RedMulE
-  //unsigned int startTicks;
-  //START_TIMING(startTicks);
+  unsigned int startTicks;
+  START_TIMING(startTicks);
 
   hwpe_cg_enable();
 
@@ -67,7 +67,7 @@ int main() {
   asm volatile("wfi" ::: "memory");
 
   // At the end of accelerator's computation, we resume and check on results
-  //END_TIMING(startTicks, "REDMULE");
+  END_TIMING(startTicks, "REDMULE");
   printf("Resumed!\n");
 
   // Disable RedMulE
@@ -78,7 +78,7 @@ int main() {
   else if (float_fmt == Float8 || float_fmt == Float8Alt)
     errors = redmule8_compare_int(y, golden, m_size * k_size / 4);
 
-  *(int *)0x80000000 = errors;
+  //*(int *)0x80000000 = errors;
 
   printf("Terminated test with %d errors. See you!\n", errors);
 

@@ -22,12 +22,11 @@ module tb_redmule_verilator (
   parameter int unsigned ID = 10;
   parameter int unsigned DW = redmule_pkg::DATA_W;
   parameter int unsigned MP = DW / 32;
-  parameter int unsigned MEMORY_SIZE = 1116496;
+  parameter int unsigned MEMORY_SIZE = 1118496;
   parameter int unsigned STACK_MEMORY_SIZE = 192 * 1024;
   parameter int unsigned PULP_XPULP = 1;
   parameter int unsigned FPU = 0;
   parameter int unsigned PULP_ZFINX = 0;
-  //parameter logic [31:0] BASE_ADDR = 32'h1c000000;
   parameter logic [31:0] IMEM_ADDR = 32'h00100000;
   parameter logic [31:0] DMEM_ADDR = 32'h00110000;
   parameter logic [31:0] SMEM_ADDR = 32'h00140000;
@@ -40,13 +39,12 @@ module tb_redmule_verilator (
 
 
   logic test_mode;
-  //logic fetch_enable_i;
   logic [31:0] core_boot_addr;
   logic redmule_busy;
 
-  hwpe_stream_intf_tcdm instr[0:0] (.clk(clk_i));
+  //hwpe_stream_intf_tcdm instr[0:0] (.clk(clk_i));
   hwpe_stream_intf_tcdm stack[0:0] (.clk(clk_i));
-  hwpe_stream_intf_tcdm tcdm[MP:0] (.clk(clk_i));
+  hwpe_stream_intf_tcdm tcdm[MP+1:0] (.clk(clk_i));
 
   logic [NC-1:0][ 1:0] evt;
 
@@ -90,16 +88,8 @@ module tb_redmule_verilator (
   logic                core_sleep;
 
   logic [  31:0]       cycle_counter;
-  //logic                mmio_req;
-  //logic                mmio_gnt;
   logic                mmio_rvalid;
-  //logic [  31:0]       mmio_addr;
   logic [  31:0]       mmio_rdata;
-
-  // ATI timing parameters.
-  localparam TCP = 1.0ns;  // clock period, 1 GHz clock
-  localparam TA = 0.2ns;  // application time
-  localparam TT = 0.8ns;  // test time
 
 
 
@@ -114,14 +104,14 @@ module tb_redmule_verilator (
   end
 
   always_comb begin : bind_instrs
-    instr[0].req  = instr_req;
-    instr[0].add  = instr_addr;
-    instr[0].wen  = 1'b1;
-    instr[0].be   = '0;
-    instr[0].data = '0;
-    instr_gnt    = instr[0].gnt;
-    instr_rdata  = instr[0].r_data;
-    instr_rvalid = instr[0].r_valid;
+    tcdm[MP+1].req  = instr_req;
+    tcdm[MP+1].add  = instr_addr;
+    tcdm[MP+1].wen  = 1'b1;
+    tcdm[MP+1].be   = '0;
+    tcdm[MP+1].data = '0;
+    instr_gnt    = tcdm[MP+1].gnt;
+    instr_rdata  = tcdm[MP+1].r_data;
+    instr_rvalid = tcdm[MP+1].r_valid;
   end
 
   always_comb begin : bind_stack
@@ -199,25 +189,8 @@ module tb_redmule_verilator (
       .periph_r_id_o   (periph_r_id)
   );
 
-  // tb_dummy_memory #(
-  //     .MP         (MP + 1),
-  //     .MEMORY_SIZE(MEMORY_SIZE),
-  //     .BASE_ADDR  (DMEM_ADDR),
-  //     .PROB_STALL (PROB_STALL),
-  //     .TCP        (TCP),
-  //     .TA         (TA),
-  //     .TT         (TT)
-  // ) i_dummy_dmemory (
-  //     .clk_i        (clk_i),
-  //     .rst_ni       (rst_ni),
-  //     .clk_delayed_i('0),
-  //     .randomize_i  (1'b0),
-  //     .enable_i     (1'b1),
-  //     .stallable_i  (1'b1),
-  //     .tcdm         (tcdm)
-  // );
   tb_tcdm_verilator #(
-      .MP         (MP + 1),
+      .MP         (MP + 2),
       .MEMORY_SIZE(MEMORY_SIZE)
   ) i_dummy_dmemory (
       .clk_i   (clk_i),
@@ -225,51 +198,17 @@ module tb_redmule_verilator (
       .enable_i(1'b1),
       .tcdm    (tcdm)
   );
-  // tb_dummy_memory #(
+
+  // tb_tcdm_verilator #(
   //     .MP         (1),
-  //     .MEMORY_SIZE(MEMORY_SIZE),
-  //     .BASE_ADDR  (IMEM_ADDR),
-  //     .PROB_STALL (0),
-  //     .TCP        (TCP),
-  //     .TA         (TA),
-  //     .TT         (TT)
+  //     .MEMORY_SIZE(MEMORY_SIZE)
   // ) i_dummy_imemory (
-  //     .clk_i        (clk_i),
-  //     .rst_ni       (rst_ni),
-  //     .clk_delayed_i('0),
-  //     .randomize_i  (1'b0),
-  //     .enable_i     (1'b1),
-  //     .stallable_i  (1'b0),
-  //     .tcdm         (instr)
+  //     .clk_i   (clk_i),
+  //     .rst_ni  (rst_ni),
+  //     .enable_i(1'b1),
+  //     .tcdm    (instr)
   // );
 
-  tb_tcdm_verilator #(
-      .MP         (1),
-      .MEMORY_SIZE(MEMORY_SIZE)
-  ) i_dummy_imemory (
-      .clk_i   (clk_i),
-      .rst_ni  (rst_ni),
-      .enable_i(1'b1),
-      .tcdm    (instr)
-  );
-
-  // tb_dummy_memory #(
-  //     .MP         (1),
-  //     .MEMORY_SIZE(STACK_MEMORY_SIZE),
-  //     .BASE_ADDR  (SMEM_ADDR),
-  //     .PROB_STALL (0),
-  //     .TCP        (TCP),
-  //     .TA         (TA),
-  //     .TT         (TT)
-  // ) i_dummy_stack_memory (
-  //     .clk_i        (clk_i),
-  //     .rst_ni       (rst_ni),
-  //     .clk_delayed_i('0),
-  //     .randomize_i  (1'b0),
-  //     .enable_i     (1'b1),
-  //     .stallable_i  (1'b0),
-  //     .tcdm         (stack)
-  // );
   tb_tcdm_verilator #(
       .MP         (1),
       .MEMORY_SIZE(32'h30000)
@@ -343,15 +282,15 @@ module tb_redmule_verilator (
     automatic string simdata;
 
 
-    if ($value$plusargs("firmware=%s", firmware)) begin
+    // if ($value$plusargs("firmware=%s", firmware)) begin
 
-      $display("[TESTBENCH] @ t=%0t: loading firmware %0s", $time, firmware);
-      // load instruction memory
-      $readmemh(firmware, tb_redmule_verilator.i_dummy_imemory.memory);
-    end else begin
-      $display("No firmware specified");
-      $finish;
-    end
+    //   $display("[TESTBENCH] @ t=%0t: loading firmware %0s", $time, firmware);
+    //   // load instruction memory
+    //   $readmemh(firmware, tb_redmule_verilator.i_dummy_imemory.memory);
+    // end else begin
+    //   $display("No firmware specified");
+    //   $finish;
+    // end
 
     if ($value$plusargs("simdata=%s", simdata)) begin
       $display("[TESTBENCH] @ t=%0t: loading simdata %0s", $time, simdata);
@@ -384,9 +323,9 @@ module tb_redmule_verilator (
 
     do @(posedge clk_i); while (~core_sleep || errors == -1);
 
-    $error("[TB] - errors=%08x", errors);
+    $display("[TB] - errors=%08x", errors);
     if (errors != 0) begin
-      $display("[TB] - Fail!");
+      $error("[TB] - Fail!");
     end else begin
       $display("[TB] - Success!");
     end
