@@ -89,6 +89,13 @@ module tb_redmule_verilator (
   logic                data_err;
   logic                core_sleep;
 
+  logic [  31:0]       cycle_counter;
+  //logic                mmio_req;
+  //logic                mmio_gnt;
+  logic                mmio_rvalid;
+  //logic [  31:0]       mmio_addr;
+  logic [  31:0]       mmio_rdata;
+
   // ATI timing parameters.
   localparam TCP = 1.0ns;  // clock period, 1 GHz clock
   localparam TA = 0.2ns;  // application time
@@ -125,10 +132,10 @@ module tb_redmule_verilator (
     stack[0].data = data_wdata;
   end
 
-  logic other_r_valid;
+  //logic other_r_valid;
   always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (~rst_ni) other_r_valid <= '0;
-    else other_r_valid <= data_req & (data_addr >= MMIO_ADDR);
+    if (~rst_ni) mmio_rvalid <= '0;
+    else mmio_rvalid <= data_req & (data_addr >= MMIO_ADDR);
   end
 
   for (genvar ii = 0; ii < MP; ii++) begin : tcdm_binding
@@ -154,8 +161,10 @@ module tb_redmule_verilator (
                                                    tcdm[MP].gnt : '1;
   assign data_rdata  = periph_r_valid ? periph_r_data  :
                                         stack[0].r_valid ? stack[0].r_data  :
-                                                           tcdm[MP].r_valid ? tcdm[MP].r_data : '0;
-  assign data_rvalid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | other_r_valid;
+                                                           tcdm[MP].r_valid ? tcdm[MP].r_data : 
+                                                                                               mmio_rvalid ? mmio_rdata: '0;
+
+  assign data_rvalid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | mmio_rvalid;
 
   redmule_wrap #(
       .ID_WIDTH(ID),
@@ -207,7 +216,7 @@ module tb_redmule_verilator (
   //     .stallable_i  (1'b1),
   //     .tcdm         (tcdm)
   // );
-    tb_tcdm_verilator #(
+  tb_tcdm_verilator #(
       .MP         (MP + 1),
       .MEMORY_SIZE(MEMORY_SIZE)
   ) i_dummy_dmemory (
@@ -234,7 +243,7 @@ module tb_redmule_verilator (
   //     .tcdm         (instr)
   // );
 
-    tb_tcdm_verilator #(
+  tb_tcdm_verilator #(
       .MP         (1),
       .MEMORY_SIZE(MEMORY_SIZE)
   ) i_dummy_imemory (
@@ -261,7 +270,7 @@ module tb_redmule_verilator (
   //     .stallable_i  (1'b0),
   //     .tcdm         (stack)
   // );
-    tb_tcdm_verilator #(
+  tb_tcdm_verilator #(
       .MP         (1),
       .MEMORY_SIZE(32'h30000)
   ) i_dummy_stack_memory (
@@ -354,36 +363,31 @@ module tb_redmule_verilator (
     core_boot_addr = BOOT_ADDR;
   end
 
-  integer f_t0, f_t1;
-  integer f_x, f_W, f_y, f_tau;
-  logic start;
 
-  int   errors = -1;
-  always_ff @(posedge clk_i) begin
-    if ((data_addr == MMADDR_EXIT) && (data_we & data_req == 1'b1)) begin
-      errors = data_wdata;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (~rst_ni) cycle_counter <= '0;
+    else cycle_counter <= cycle_counter + 1;
+
+    if ((data_addr == MMADDR_EXIT) && data_req) begin
+      if (data_we) errors <= data_wdata;
+      else mmio_rdata <= cycle_counter;
     end
-    if ((data_addr == MMADDR_PRINT) && (data_we & data_req == 1'b1)) begin
+    if ((data_addr == MMADDR_PRINT) && (data_we & data_req)) begin
       $write("%c", data_wdata[7:0]);
     end
   end
 
+  int errors = -1;
   initial begin
-    integer id;
-    int cnt_rd, cnt_wr;
-
     test_mode = 1'b0;
 
     do @(posedge clk_i); while (~core_sleep || errors == -1);
-    //cnt_rd = tb_redmule_verilator.i_dummy_dmemory.cnt_rd[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_rd[8];
-    //cnt_wr = tb_redmule_verilator.i_dummy_dmemory.cnt_wr[0] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[1] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[2] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[3] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[4] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[5] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[6] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[7] + tb_redmule_verilator.i_dummy_dmemory.cnt_wr[8];
-    //$display("[TB] - cnt_rd=%-8d", cnt_rd);
-    //$display("[TB] - cnt_wr=%-8d", cnt_wr);
+
+    $error("[TB] - errors=%08x", errors);
     if (errors != 0) begin
-      $error("[TB] - errors=%08x", errors);
       $display("[TB] - Fail!");
     end else begin
-      $display("[TB] - errors=%08x", errors);
       $display("[TB] - Success!");
     end
     $finish;

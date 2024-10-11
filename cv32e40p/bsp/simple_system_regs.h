@@ -9,9 +9,11 @@ see tb/core/mm_ram.sv
     localparam int                        MMADDR_TESTSTATUS = 32'h2000_0000;
     localparam int                        MMADDR_EXIT       = 32'h2000_0004;
 */
-#define MMADDR_PRINT         0x80000004
-//#define MMADDR_TESTSTATUS    0x20000000
-#define MMADDR_EXIT          0x80000000
+
+
+#define MMADDR_EXIT                0x80000000
+#define MMADDR_PRINT               0x80000004
+#define MMADDR_CYCLE_COUNTER       MMADDR_EXIT
 
 //#define SIM_CTRL_BASE 0x20000
 //#define SIM_CTRL_OUT 0x0

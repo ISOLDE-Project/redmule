@@ -8,6 +8,7 @@
 #include <stdint.h>
 #ifdef USE_BSP
 #include <bsp/tinyprintf.h>
+#include <bsp/simple_system_common.h>
 #else
 #include "tinyprintf.h"
 #endif
@@ -46,6 +47,9 @@ int main() {
   int offload_id_tmp, offload_id;
 
   // Enable RedMulE
+  //unsigned int startTicks;
+  //START_TIMING(startTicks);
+
   hwpe_cg_enable();
 
   hwpe_soft_clear();
@@ -63,6 +67,7 @@ int main() {
   asm volatile("wfi" ::: "memory");
 
   // At the end of accelerator's computation, we resume and check on results
+  //END_TIMING(startTicks, "REDMULE");
   printf("Resumed!\n");
 
   // Disable RedMulE
@@ -76,6 +81,7 @@ int main() {
   *(int *)0x80000000 = errors;
 
   printf("Terminated test with %d errors. See you!\n", errors);
+
 
   return errors;
 }
