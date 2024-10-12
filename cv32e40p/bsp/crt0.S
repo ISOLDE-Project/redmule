@@ -2,15 +2,15 @@
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 
-#include "simple_system_regs.h"
+
 
 .section .text
 
 default_exc_handler:
   jal x0, simple_exc_handler
 
-timer_handler:
-  jal x0, simple_timer_handler
+#timer_handler:
+#  jal x0, simple_exc_handler
 
 reset_handler:
   /* set all registers to zero */
@@ -46,11 +46,20 @@ reset_handler:
   mv x30, x1
   mv x31, x1
 
-  /* stack initilization */
-  la   x2, _stack_start
-
-_start:
   .global _start
+_start:
+ 
+  # Enabling CV32E40P mstatus.MIE
+  li      t0, 0x1
+  csrrs   zero, mstatus, t0
+  # Enabling CV32E40P SW interrupt (mie[3])
+  li      t0, 0x8
+  csrrs   zero, mie, t0
+
+
+  /* Stack initialization */
+  la   x2, _stack_start
+  andi sp, x2, ~0x7      //aligning the stack pointer (sp) to an 8-byte boundary 
 
   /* clear BSS */
   la x26, _bss_start
@@ -67,18 +76,9 @@ zero_loop_end:
 
 main_entry:
   /* jump to startup program entry  */
-//  addi x10, x0, 0
-//  addi x11, x0, 0
+  addi a0, x0, 0
+  addi a1, x0, 0
   jal x1, startup
-  /* Halt simulation */
-//    li  a1, 0
-//    li  a2, 0
-//    li  a3, 0
-//    li  a4, 0
-//    li  a5, 0
-//    li  a7, 93
-//    ecall
-
   /* If execution ends up here just put the core to sleep */
 sleep_loop:
   wfi
@@ -92,11 +92,7 @@ sleep_loop:
 
   // All unimplemented interrupts/exceptions go to the default_exc_handler.
   .org 0x00
-  .rept 7
-  jal x0, default_exc_handler
-  .endr
-  jal x0, timer_handler
-  .rept 23
+  .rept 31
   jal x0, default_exc_handler
   .endr
 

@@ -5,7 +5,6 @@
 // Yvan Tortorella <yvan.tortorella@unibo.it>
 //
 
-#include "tinyprintf.h"
 
 #ifndef REDMULE_UTILS_H
 #define REDMULE_UTILS_H

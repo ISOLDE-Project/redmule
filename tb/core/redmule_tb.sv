@@ -357,7 +357,7 @@ module redmule_tb (
       $display("No simdata specified");
       $finish;
     end
-    core_boot_addr = 32'h1C000080;
+    core_boot_addr = 32'h1C000084;
   end
 
   integer f_t0, f_t1;

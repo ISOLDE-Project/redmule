@@ -123,4 +123,15 @@ static inline void icache_enable(int enable) {
   }
 }
 
+inline uint32_t getTicks(){
+  
+  volatile uint32_t* cycle_counter = (uint32_t*) MMADDR_CYCLE_COUNTER;
+
+   return  (*cycle_counter);
+}
+
+// Define START_TIMING and END_TIMING macros
+#define START_TIMING(initval)  initval = getTicks()
+#define END_TIMING(initval, value)  printf("Timing for %s: %u cycles\n", value, getTicks() - initval)
+
 #endif

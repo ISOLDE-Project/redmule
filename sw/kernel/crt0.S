@@ -8,10 +8,6 @@
   .section .text
   .global _start
 _start:
-  li t0, 0x80000000  # Load the address 0x80000000 into register t0
-  li t1, 0xACE       # Load the immediate value 0xACE into register t1
-  sw t1, 0(t0)       # Store the value from t1 into the memory location pointed to by t0
-  wfi
 
   # Cluster PEs will also starts here to avoid aligning another entry point
   # Just re-route them to the right entry
@@ -34,7 +30,8 @@ _start:
   bltu    t0, t1, 1b
 
   /* Stack initialization */
-  la   x2, stack
+  la   x2, _stack_start
+  andi sp, x2, ~0x7      //aligning the stack pointer (sp) to an 8-byte boundary 
 
 .section .text
 

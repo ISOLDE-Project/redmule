@@ -2,7 +2,7 @@
 First time, install toolchain
 
 ```sh
-make -f Makefile.tools
+. ./setup.sh
 ```
 otherwise:  
 ```sh
@@ -10,7 +10,7 @@ otherwise:
 ```
 
 ## build simulation
-top module can be configured in cmd line,VLT_TOP_MODULE=<top module name>, it defaults to **redmule_tb**, see [Makefile.verilator](Makefile.verilator)
+top module can be configured in cmd line,VLT_TOP_MODULE=<top module name>, it defaults to **tb_redmule_verilator**, see [Makefile.verilator](Makefile.verilator)
 ```sh
 make verilate
 ```
@@ -18,43 +18,28 @@ make verilate
 ```sh
 make veri-clean
 ```
-## run redmule simulation
-make sure you build the sw, see [bellow](#build-sw)
+
+### build simulation and run the test program
 ```sh
-make veri-test
+make  veri-clean verilate  hw-clean  clean-test-programs sim-inputs run-test
 ```
-Output similar to:  
-```
-[TESTBENCH] @ t=0: loading firmware /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/stim_instr.txt
-[TESTBENCH] @ t=0: loading simdata /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/stim_data.txt
-Triggering accelerator and going to sleep...
-Resumed!
-Terminated test with 0 errors. See you!
-[TB] - cnt_rd=360     
-[TB] - cnt_wr=459     
-[TB] - errors=00000000
-[TB] - Success!
-```
-## test simulation
-only works if VLT_TOP_MODULE == tb_top_verilator
+### build and run the test program
 ```sh
-make verilate VLT_TOP_MODULE=tb_top_verilator
-make sanity-veri-run
+make  hw-clean  clean-test-programs sim-inputs run-test
 ```
+
 Output similar to:    
 ```
-HELLO WORLD!!!
-This is the OpenHW Group CV32E40P CORE-V processor core.
-CV32E40P is a RISC-V ISA compliant core with the following attributes:
-        mvendorid = 0x602
-        marchid   = 0x4
-        mimpid    = 0x0
-        misa      = 0x40001104
-        XLEN is 32-bits
-        Supported Instructions Extensions: MIC
+[TESTBENCH] @ t=0: loading firmware /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/redmule-m.hex
+Timing for REDMULE: 233 cycles
+Resumed!
+Terminated test with 0 errors. See you!
+[TB] - errors=00000000
+[TB] - Success!
+- /ubuntu_20.04/home/ext/tristan-project/redmule/tb/tb_redmule_verilator.sv:316: Verilog $finish
+mv verilator_tb.vcd /ubuntu_20.04/home/ext/tristan-project/redmule/log/tb_redmule_verilator/
+rm /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/redmule.elf
 
-TOP.tb_top_verilator @ 130110: EXIT SUCCESS
-- /home/uic52463/hdd2/isolde-project/redmule/tb/core/tb_top_verilator.sv:83: Verilog $finish
 ```
 ## build sw
 get a clean slate

@@ -55,6 +55,9 @@ sources:
     - target: any(redmule_test_complex, redmule_test_hwpe)
       files:
         - tb/tb_dummy_memory.sv
+        - tb/tb_tcdm_verilator.sv
+        - tb/core/core_memory_if.sv
+        - tb/core/sp_ram.sv
 
     - target: redmule_test_complex
       files:
@@ -63,3 +66,4 @@ sources:
     - target: redmule_test_hwpe
       files:
         - tb/redmule_tb.sv
+        - tb/tb_redmule_verilator.sv

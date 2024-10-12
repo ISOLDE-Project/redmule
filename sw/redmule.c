@@ -6,6 +6,13 @@
 //
 
 #include <stdint.h>
+#ifdef USE_BSP
+#include <bsp/tinyprintf.h>
+#include <bsp/simple_system_common.h>
+#else
+#include "tinyprintf.h"
+#endif
+
 #include "redmule_utils.h"
 #include "archi_redmule.h"
 #include "hal_redmule.h"
@@ -40,6 +47,9 @@ int main() {
   int offload_id_tmp, offload_id;
 
   // Enable RedMulE
+  unsigned int startTicks;
+  START_TIMING(startTicks);
+
   hwpe_cg_enable();
 
   hwpe_soft_clear();
@@ -57,7 +67,8 @@ int main() {
   asm volatile("wfi" ::: "memory");
 
   // At the end of accelerator's computation, we resume and check on results
-  //printf("Resumed!\n");
+  END_TIMING(startTicks, "REDMULE");
+  printf("Resumed!\n");
 
   // Disable RedMulE
   hwpe_cg_disable();
@@ -67,9 +78,10 @@ int main() {
   else if (float_fmt == Float8 || float_fmt == Float8Alt)
     errors = redmule8_compare_int(y, golden, m_size * k_size / 4);
 
-  *(int *)0x80000000 = errors;
+  //*(int *)0x80000000 = errors;
 
-  //tfp_printf("Terminated test with %d errors. See you!\n", errors);
+  printf("Terminated test with %d errors. See you!\n", errors);
+
 
   return errors;
 }

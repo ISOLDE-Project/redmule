@@ -1,13 +1,33 @@
+
+
 #############
 # Verilator #
 #############
 
-VLT_TOP_MODULE ?= redmule_tb
-#VLT_TOP_MODULE = tb_top_verilator
+include mk/Common.mk
 
+VLT_TOP_MODULE ?= tb_redmule_verilator
+
+
+
+# Test-Program directores.
+TEST               ?= redmule
+TEST_FILES         ?= $(TEST).c
+TEST_TEST_DIR       = $(CORE_V_VERIF)/sw
+
+#  -Core Firmware and the RISCV GCC Toolchain (SDK)
+
+
+# Common output directories
+RUN_INDEX                ?= 0
+SIM_RESULTS              ?= simulation_results
+SIM_TEST_RESULTS         = $(SIM_RESULTS)/$(TEST)
+SIM_RUN_RESULTS          = $(SIM_TEST_RESULTS)/$(RUN_INDEX)
+SIM_TEST_PROGRAM_RESULTS = $(SIM_RUN_RESULTS)/test_program
+SIM_BSP_RESULTS          = $(CORE_V_VERIF)/sw/build/bsp
+#####
 VERI_LOG_DIR      ?= $(mkfile_path)/log/$(VLT_TOP_MODULE)
 SIM_TEST_INPUTS   ?= $(mkfile_path)/vsim
-TEST              ?= redmule
 BIN_DIR           = $(mkfile_path)/bin/$(VLT_TOP_MODULE)
 VERI_FLAGS        +=
 
@@ -40,35 +60,17 @@ sanity-veri-run:
 .PHONY: run-test
 run-test: $(BIN_DIR)/verilator_executable 
 	@echo "$(BANNER)"
-	@echo "* Running with Verilator: "
-	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
-	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
+	@echo "* Running with Verilator: $(BIN_DIR)/verilator_executable "
+	@echo "*               log file: $(VERI_LOG_DIR)/$(TEST).log"
+	@echo "*             *.vcd file: $(VERI_LOG_DIR)"
 	@echo "$(BANNER)"
 	mkdir -p $(VERI_LOG_DIR)
 	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
 	$(BIN_DIR)/verilator_executable  \
 		$(VERI_FLAGS) \
-		"+firmware=$(SIM_TEST_INPUTS)/stim_instr.txt" \
-		"+simdata=$(SIM_TEST_INPUTS)/stim_data.txt" \
+		"+firmware=$(SIM_TEST_INPUTS)/$(TEST)-m.hex" \
 		| tee $(VERI_LOG_DIR)/$(TEST).log
 	mv verilator_tb.vcd $(VERI_LOG_DIR)/
-
-
-.PHONY: veri-test
-veri-test: $(BIN_DIR)/verilator_executable 
-	@echo "$(BANNER)"
-	@echo "* Running with Verilator: "
-	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
-	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
-	@echo "$(BANNER)"
-	mkdir -p $(VERI_LOG_DIR)
-	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
-	$(BIN_DIR)/verilator_executable  \
-		$(VERI_FLAGS) \
-		"+firmware=$(SIM_TEST_INPUTS)/stim_instr.txt" \
-		"+simdata=$(SIM_TEST_INPUTS)/stim_data.txt" \
-		| tee $(VERI_LOG_DIR)/$(TEST).log
-	mv verilator_tb.vcd $(VERI_LOG_DIR)/	
 
 	
 .PHONY: help
@@ -79,8 +81,10 @@ help:
 	@echo run-test                                 -- runs the test
 	@echo veri-clean                               -- gets a clean slate for simulation
 	@echo verilate VLT_TOP_MODULE=tb_top_verilator
-	@echo sanity-veri-run                          -- smoke test for $(BIN_DIR)/verilator_executable, only with  VLT_TOP_MODULE=tb_top_verilator
+	
 
 
 
+sim-inputs: $(VSIM_DIR) $(SIM_TEST_INPUTS)/$(TEST).hex 
 
+	
