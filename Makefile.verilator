@@ -62,7 +62,7 @@ run-test: $(BIN_DIR)/verilator_executable
 	@echo "$(BANNER)"
 	@echo "* Running with Verilator: $(BIN_DIR)/verilator_executable "
 	@echo "*               log file: $(VERI_LOG_DIR)/$(TEST).log"
-	@echo "*             *.vcd file: $(VERI_LOG_DIR)"
+	@echo "*             *.vcd file: $(VERI_LOG_DIR)/$(TEST).vcd"
 	@echo "$(BANNER)"
 	mkdir -p $(VERI_LOG_DIR)
 	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
@@ -70,7 +70,7 @@ run-test: $(BIN_DIR)/verilator_executable
 		$(VERI_FLAGS) \
 		"+firmware=$(SIM_TEST_INPUTS)/$(TEST)-m.hex" \
 		| tee $(VERI_LOG_DIR)/$(TEST).log
-	mv verilator_tb.vcd $(VERI_LOG_DIR)/
+	mv verilator_tb.vcd $(VERI_LOG_DIR)/$(TEST).vcd
 
 	
 .PHONY: help
@@ -84,7 +84,7 @@ help:
 	
 
 
+$(SIM_TEST_INPUTS)/$(TEST).hex: $(SIM_TEST_INPUTS)/$(TEST).elf
 
-sim-inputs: $(VSIM_DIR) $(SIM_TEST_INPUTS)/$(TEST).hex 
+sim-inputs: $(VSIM_DIR) $(SIM_TEST_INPUTS)/$(TEST).hex
 
-	
