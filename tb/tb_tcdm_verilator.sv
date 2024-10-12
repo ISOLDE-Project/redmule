@@ -35,19 +35,19 @@ module tb_tcdm_verilator #(
       always_comb begin
         case (misalignment[i])
           2'b00: begin
-            index[i] = tcdm[i].add;
+            index[i] = (tcdm[i].add - BASE_ADDR);
           end
           2'b01: begin
             // If addr is ...xx01, read from addr-1, addr, addr+1
-            index[i] = tcdm[i].add - 1;
+            index[i] = (tcdm[i].add - BASE_ADDR) - 1;
           end
           2'b10: begin
             // If addr is ...xx10, read from addr-2, addr-1, addr
-            index[i] = tcdm[i].add - 2;
+            index[i] = (tcdm[i].add - BASE_ADDR) - 2;
           end
           2'b11: begin
             // If addr is ...xx11, read from addr-3, addr-2, addr-1
-            index[i] = tcdm[i].add - 3;
+            index[i] = (tcdm[i].add - BASE_ADDR) - 3;
           end
         endcase
         write_data[i][7:0]   = tcdm[i].be[0] ? tcdm[i].data[7:0] : memory[index[i]];

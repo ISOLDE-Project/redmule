@@ -191,23 +191,14 @@ module tb_redmule_verilator (
 
   tb_tcdm_verilator #(
       .MP         (MP + 2),
-      .MEMORY_SIZE(MEMORY_SIZE)
-  ) i_dummy_dmemory (
+      .MEMORY_SIZE(MEMORY_SIZE),
+      .BASE_ADDR(IMEM_ADDR)
+  ) i_dummy_memory (
       .clk_i   (clk_i),
       .rst_ni  (rst_ni),
       .enable_i(1'b1),
       .tcdm    (tcdm)
   );
-
-  // tb_tcdm_verilator #(
-  //     .MP         (1),
-  //     .MEMORY_SIZE(MEMORY_SIZE)
-  // ) i_dummy_imemory (
-  //     .clk_i   (clk_i),
-  //     .rst_ni  (rst_ni),
-  //     .enable_i(1'b1),
-  //     .tcdm    (instr)
-  // );
 
   tb_tcdm_verilator #(
       .MP         (1),
@@ -279,26 +270,19 @@ module tb_redmule_verilator (
 
   initial begin : load_prog
     automatic string firmware;
-    automatic string simdata;
 
 
-    // if ($value$plusargs("firmware=%s", firmware)) begin
 
-    //   $display("[TESTBENCH] @ t=%0t: loading firmware %0s", $time, firmware);
-    //   // load instruction memory
-    //   $readmemh(firmware, tb_redmule_verilator.i_dummy_imemory.memory);
-    // end else begin
-    //   $display("No firmware specified");
-    //   $finish;
-    // end
+    if ($value$plusargs("firmware=%s", firmware)) begin
 
-    if ($value$plusargs("simdata=%s", simdata)) begin
-      $display("[TESTBENCH] @ t=%0t: loading simdata %0s", $time, simdata);
-      $readmemh(simdata, tb_redmule_verilator.i_dummy_dmemory.memory);
+      $display("[TESTBENCH] @ t=%0t: loading firmware %0s", $time, firmware);
+      // load instruction memory
+      $readmemh(firmware, tb_redmule_verilator.i_dummy_memory.memory);
     end else begin
-      $display("No simdata specified");
+      $display("No firmware specified");
       $finish;
     end
+
     core_boot_addr = BOOT_ADDR;
   end
 

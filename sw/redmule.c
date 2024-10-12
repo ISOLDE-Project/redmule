@@ -61,7 +61,7 @@ int main() {
               (uint8_t)gemm_ops, float_fmt);
 
   // Start RedMulE operation and sleeping until the end of computation
-  printf("Triggering accelerator and going to sleep...\n");
+  //printf("Triggering accelerator and going to sleep...\n");
   hwpe_trigger_job();
 
   asm volatile("wfi" ::: "memory");
