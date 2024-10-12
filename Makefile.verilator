@@ -7,22 +7,13 @@
 include mk/Common.mk
 
 VLT_TOP_MODULE ?= redmule_tb
-#VLT_TOP_MODULE = tb_top_verilator
 
-###
-#CV_CORE      ?= CV32E40P
-
-#num_cores := $(shell nproc)
-#num_cores_half := $(shell echo "$$(($(num_cores) / 2))")
-
-#CORE_V_VERIF      := $(shell git rev-parse --show-toplevel)
 
 
 # Test-Program directores.
-
 TEST               ?= redmule
 TEST_FILES         ?= $(TEST).c
-TEST_TEST_DIR     = $(CORE_V_VERIF)/sw
+TEST_TEST_DIR       = $(CORE_V_VERIF)/sw
 
 #  -Core Firmware and the RISCV GCC Toolchain (SDK)
 
@@ -70,8 +61,8 @@ sanity-veri-run:
 run-test: $(BIN_DIR)/verilator_executable 
 	@echo "$(BANNER)"
 	@echo "* Running with Verilator: $(BIN_DIR)/verilator_executable "
-	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
-	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
+	@echo "*               log file: $(VERI_LOG_DIR)/$(TEST).log"
+	@echo "*             *.vcd file: $(VERI_LOG_DIR)"
 	@echo "$(BANNER)"
 	mkdir -p $(VERI_LOG_DIR)
 	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
@@ -82,40 +73,6 @@ run-test: $(BIN_DIR)/verilator_executable
 		| tee $(VERI_LOG_DIR)/$(TEST).log
 	mv verilator_tb.vcd $(VERI_LOG_DIR)/
 
-
-.PHONY: run-test2
-run-test2: $(BIN_DIR)/verilator_executable 
-	@echo "$(BANNER)"
-	@echo "* Running with Verilator: $(BIN_DIR)/verilator_executable "
-	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
-	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
-	@echo "$(BANNER)"
-	mkdir -p $(VERI_LOG_DIR)
-	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
-	$(BIN_DIR)/verilator_executable  \
-		$(VERI_FLAGS) \
-		"+firmware=vsim_ref/vsim/stim_instr.txt" \
-		"+simdata=vsim_ref/vsim/stim_data.txt" \
-		| tee $(VERI_LOG_DIR)/$(TEST).log
-	mv verilator_tb.vcd $(VERI_LOG_DIR)/
-
-
-.PHONY: veri-test
-veri-test: $(BIN_DIR)/verilator_executable 
-	@echo "$(BANNER)"
-	@echo "* Running with Verilator: "
-	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
-	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
-	@echo "$(BANNER)"
-	mkdir -p $(VERI_LOG_DIR)
-	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
-	$(BIN_DIR)/verilator_executable  \
-		$(VERI_FLAGS) \
-		"+firmware=/home/dan/ext/tristan-project/redmule/sw/build/verif" \
-		"+simdata=$(SIM_TEST_INPUTS)/stim_data.txt" \
-		| tee /home/dan/ext/tristan-project/redmule/log/tb_redmule_verilator/verif.log
-	mv verilator_tb.vcd $(VERI_LOG_DIR)/	
-
 	
 .PHONY: help
 
@@ -125,42 +82,10 @@ help:
 	@echo run-test                                 -- runs the test
 	@echo veri-clean                               -- gets a clean slate for simulation
 	@echo verilate VLT_TOP_MODULE=tb_top_verilator
-	@echo sanity-veri-run                          -- smoke test for $(BIN_DIR)/verilator_executable, only with  VLT_TOP_MODULE=tb_top_verilator
+	
 
-
-
-
-
-#$(SIM_TEST_INPUTS)/$(TEST).elf:
-#test_app.elf:
-#	@echo "$(BANNER)"
-#	@echo "* Compiling the test $@"
-#	@echo "$(BANNER)"
-#	mkdir -p $(SIM_BSP_RESULTS)
-#	cp $(BSP)/Makefile $(SIM_BSP_RESULTS)
-#	$(warning $@)
-#	$(warning TEST_PROGRAM_SRCS=$(TEST_PROGRAM_SRCS))
-#	$(warning MAIN_C_FILE=$(MAIN_C_FILE))
-#	make -C $(SIM_BSP_RESULTS) \
-		APP_FILES=$(MAIN_C_FILE)    \
-		VPATH=$(TEST_PROGRAM_SRCS):$(BSP) \
-		RISCV=$(RISCV) \
-		RISCV_PREFIX=$(RISCV_PREFIX) \
-		RISCV_EXE_PREFIX=$(RISCV_EXE_PREFIX) \
-		RISCV_MARCH=$(RISCV_MARCH) \
-		RISCV_CC=$(RISCV_CC) \
-		RISCV_CFLAGS="$(RISCV_CFLAGS)" \
-		LD_FILE=$(BSP)/link.ld \
-		$@
-
-
-#test_app.elf: $(SIM_TEST_INPUTS)/$(TEST).elf		
 
 
 sim-inputs: $(VSIM_DIR) $(SIM_TEST_INPUTS)/$(TEST).hex 
-#	rm -fr   $(SIM_TEST_INPUTS)
-#	mv $(SIM_BSP_RESULTS)/*.hex $(SIM_TEST_INPUTS)/$(TEST).hex 
-#	mv $(SIM_BSP_RESULTS)/*.elf $(SIM_TEST_INPUTS)/$(TEST).elf
-	objcopy --srec-len 1 --output-target=srec  --srec-forceS3 $(SIM_TEST_INPUTS)/$(TEST).elf $(SIM_TEST_INPUTS)/$(TEST).s19
-	scripts/parse_s19.pl $(SIM_TEST_INPUTS)/$(TEST).s19 > $(SIM_TEST_INPUTS)/$(TEST).txt 2>$(BUILD_DIR)/parse_s19.pl.log
-	python scripts/s19tomem.py $(SIM_TEST_INPUTS)/$(TEST).txt  $(STIM_INSTR) $(STIM_DATA) 
+
+	

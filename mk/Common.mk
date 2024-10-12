@@ -68,13 +68,8 @@ CV_CORE_MANIFEST    ?= $(CV_CORE_PKG)/cv32e40p_manifest.flist
 export DESIGN_RTL_DIR = $(CV_CORE_PKG)/rtl
 
 
-#TEST         ?= hello-world
-# Test-Program directores.
-# Relative path is used for Verilator which cannot seem to handle loooong pathnames.
-#TEST_PROGRAM_PATH    = $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs/custom
-#TEST_PROGRAM_RELPATH = ../../$(CV_CORE_LC)/tests/programs/custom
-#TEST_PROGRAM_RELPATH = $(CORE_V_VERIF)/$(CV_CORE_LC)/tests/programs/custom
-#TEST_TEST_DIR        := $(TEST_PROGRAM_PATH)/$(TEST)
+#
+SCRIPTS_DIR     = $(PRJ_HOME)/scripts
 ###############################################################################
 ##
 RISCV            = $(CV_SW_TOOLCHAIN)
@@ -113,6 +108,7 @@ RISCV_CFLAGS += -DUSE_BSP
 	$(RISCV_EXE_PREFIX)objcopy -O verilog \
 		$< \
 		$@
+	python $(SCRIPTS_DIR)/addr_offset.py  $@  $*-m.hex 0x00100000
 	$(RISCV_EXE_PREFIX)readelf -a $< > $*.readelf
 	$(RISCV_EXE_PREFIX)objdump \
 		-fhSD \
