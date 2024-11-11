@@ -6,6 +6,12 @@
 //
 
 #include <stdint.h>
+#ifdef USE_BSP
+#include <bsp/tinyprintf.h>
+#include <bsp/simple_system_common.h>
+#else
+#include "tinyprintf.h"
+#endif
 #include "redmule_utils.h"
 #include "archi_redmule.h"
 #include "tensor_dim.h"
@@ -82,7 +88,7 @@ int main() {
 
   *(int *)0x80000000 = errors;
 
-  tfp_printf("Terminated test with %d errors. See you!\n", errors);
+  tfp_printf("[TCA] Terminated test with %d errors. See you!\n", errors);
 
   return errors;
 }

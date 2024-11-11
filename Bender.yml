@@ -56,12 +56,10 @@ sources:
       files:
         - tb/tb_dummy_memory.sv
         - tb/tb_tcdm_verilator.sv
-        - tb/core/core_memory_if.sv
-        - tb/core/sp_ram.sv
 
     - target: redmule_test_complex
       files:
-        - tb/redmule_complex_tb.sv
+        - tb/tb_redmule_complex_verilator.sv
 
     - target: redmule_test_hwpe
       files:

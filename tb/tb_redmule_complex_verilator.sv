@@ -7,7 +7,7 @@
 
 timeunit 1ps; timeprecision 1ps;
 
-module redmule_tb
+module tb_redmule_complex_verilator
   import redmule_pkg::*;
 #(
   parameter TCP = 1.0ns, // clock period, 1 GHz clock
@@ -304,30 +304,30 @@ module redmule_tb
     core_boot_addr = 32'h1C000084;
 
     // Load instruction and data memory
-    $readmemh(stim_instr, redmule_tb.i_dummy_imemory.memory);
-    $readmemh(stim_data,  redmule_tb.i_dummy_dmemory.memory);
+    $readmemh(stim_instr, tb_redmule_complex_verilator.i_dummy_imemory.memory);
+    $readmemh(stim_data,  tb_redmule_complex_verilator.i_dummy_dmemory.memory);
 
     // End: WFI + returned != -1 signals end-of-computation
     while(~core_sleep || errors==-1) @(posedge clk_i);
-    cnt_rd = redmule_tb.i_dummy_dmemory.cnt_rd[0] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[1] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[2] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[3] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[4] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[5] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[6] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[7] +
-             redmule_tb.i_dummy_dmemory.cnt_rd[8];
+    cnt_rd = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[0] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[1] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[2] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[3] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[4] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[5] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[6] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[7] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[8];
 
-    cnt_wr = redmule_tb.i_dummy_dmemory.cnt_wr[0] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[1] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[2] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[3] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[4] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[5] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[6] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[7] +
-             redmule_tb.i_dummy_dmemory.cnt_wr[8];
+    cnt_wr = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[0] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[1] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[2] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[3] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[4] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[5] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[6] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[7] +
+             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[8];
 
     $display("[TB TCA] - cnt_rd=%-8d", cnt_rd);
     $display("[TB TCA] - cnt_wr=%-8d", cnt_wr);
@@ -341,4 +341,4 @@ module redmule_tb
     $finish;
   end
 
-endmodule // redmule_tb
+endmodule // tb_redmule_complex_verilator

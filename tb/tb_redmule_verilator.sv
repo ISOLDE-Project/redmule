@@ -307,11 +307,11 @@ module tb_redmule_verilator (
 
     do @(posedge clk_i); while (~core_sleep || errors == -1);
 
-    $display("[TB] - errors=%08x", errors);
+    $display("[TB LCA] - errors=%08x", errors);
     if (errors != 0) begin
-      $error("[TB] - Fail!");
+      $error("[TB LCA] - Fail!");
     end else begin
-      $display("[TB] - Success!");
+      $display("[TB LCA] - Success!");
     end
     $finish;
 

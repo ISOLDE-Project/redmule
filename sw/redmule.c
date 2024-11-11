@@ -78,9 +78,9 @@ int main() {
   else if (float_fmt == Float8 || float_fmt == Float8Alt)
     errors = redmule8_compare_int(y, golden, m_size * k_size / 4);
 
-  //*(int *)0x80000000 = errors;
+  *(int *)MMADDR_EXIT = errors;
 
-  printf("Terminated test with %d errors. See you!\n", errors);
+  printf("[LCA] Terminated test with %d errors. See you!\n", errors);
 
 
   return errors;

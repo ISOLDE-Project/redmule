@@ -18,7 +18,13 @@ make verilate
 ```sh
 make veri-clean
 ```
-
+### REDMULE_COMPLEX
+```
+make REDMULE_COMPLEX=1  run-test
+```
+```
+ make REDMULE_COMPLEX=1  veri-clean verilate run-test
+```
 ### build simulation and run the test program
 ```sh
 make  veri-clean verilate  hw-clean  clean-test-programs sim-inputs run-test

@@ -84,7 +84,7 @@ VERI_CFLAGS        += -O2
 #ifeq ($(findstring +vcd,$(VERI_FLAGS)),+vcd)
 
 VLT_FLAGS    += -Wno-fatal
-VLT_CFLAGS   += -DTOPLEVEL_NAME=$(VLT_TOP_MODULE)
+VLT_CFLAGS   += -DTOPLEVEL_NAME=V$(VLT_TOP_MODULE)
 VLT_CFLAGS   += -std=c++17 
 
 ifneq (${WAVES}, 0)
@@ -102,7 +102,7 @@ sanity-veri-run:
 
 testbench_verilator:  $(TBSRC_VERI) 
 	@echo "$(BANNER)"
-	@echo "* Compiling CORE TB and CV32E40P with Verilator"
+	@echo "* Compiling CORE TB  with Verilator"
 	@echo "$(BANNER)"
 	$(VERILATOR) --cc --sv --exe \
 		$(VERI_TRACE) \
@@ -112,7 +112,7 @@ testbench_verilator:  $(TBSRC_VERI)
 		$(VLT_TOP_MODULE) $(TBSRC_VERI) \
 		-f $(CV_CORE_MANIFEST) \
 		$(CV_CORE_PKG)/bhv/$(CV_CORE_LC)_core_log.sv \
-		$(TBSRC_CORE)/tb_top_verilator.cpp --Mdir $(VERI_OBJ_DIR) \
+		$(TBSRC_CORE)/redmule_tb.cpp --Mdir $(VERI_OBJ_DIR) \
 		-CFLAGS "$(VLT_CFLAGS)"  \
 		$(VERI_COMPILE_FLAGS)
 	$(MAKE) -C $(VERI_OBJ_DIR) -j$(num_cores_half) -f V$(VLT_TOP_MODULE).mk

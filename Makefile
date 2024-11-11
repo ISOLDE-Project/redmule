@@ -19,7 +19,7 @@ ARCH           ?= rv
 XLEN           ?= 32
 XTEN           ?= imc_zicsr
 
-
+export REDMULE_COMPLEX 
 ifeq ($(REDMULE_COMPLEX),1)
 	TEST_SRCS := $(SW)/redmule_complex.c
 else
@@ -80,10 +80,10 @@ $(BIN): $(CRT) $(OBJ)
 	$(RV_LD) $(RV_LD_OPTS) -o $(BIN) $(CRT) $(OBJ) -T$(LINKSCRIPT)
 
 $(CRT): $(BUILD_DIR)
-	$(RV_CC) $(CC_OPTS) -c $(BOOTSCRIPT) -o $(CRT)
+	$(RV_CC) $(RV_CC_OPTS) -c $(BOOTSCRIPT) -o $(CRT)
 
 $(OBJ): $(TEST_SRCS)
-	$(RV_CC) $(CC_OPTS) -c $(TEST_SRCS) $(FLAGS) $(INC) -o $(OBJ)
+	$(RV_CC) $(RV_CC_OPTS) -DTINYPRINTF_DEFINE_TFP_PRINTF -c $(TEST_SRCS) $(FLAGS) $(INC) -o $(OBJ)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -153,6 +153,7 @@ synth-ips:
 
 sw-clean:
 	rm -rf $(BUILD_DIR)
+	rm -rf $(VSIM_DIR)
 	@rm -vf $(STIM_INSTR)
 	@rm -vf $(STIM_DATA)
 

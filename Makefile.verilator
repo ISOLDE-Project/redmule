@@ -6,13 +6,26 @@
 
 include mk/Common.mk
 
-VLT_TOP_MODULE ?= tb_redmule_verilator
+# Check if REDMULE_COMPLEX is set to 1
+
+ifeq ($(REDMULE_COMPLEX), 1)
+    VLT_TOP_MODULE ?=  tb_redmule_complex_verilator
+else
+    VLT_TOP_MODULE ?= tb_redmule_verilator
+endif
+
 
 
 
 # Test-Program directores.
+
 TEST               ?= redmule
-TEST_FILES         ?= $(TEST).c
+ifeq ($(REDMULE_COMPLEX),1)
+	TEST_FILES  ?= redmule_complex.c
+else
+	TEST_FILES  ?= redmule.c
+endif
+
 TEST_TEST_DIR       = $(CORE_V_VERIF)/sw
 
 #  -Core Firmware and the RISCV GCC Toolchain (SDK)
@@ -38,11 +51,12 @@ VERI_FLAGS        +=
 # Clean all build directories and temporary files for Questasim simulation
 veri-clean: 
 	rm -f manifest.flist
-	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(BIN_DIR) $@
+	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(BIN_DIR) VLT_TOP_MODULE=$(VLT_TOP_MODULE)  $@
 
 verilate: $(BIN_DIR)/verilator_executable
 
 manifest.flist: Bender.yml
+	@echo REDMULE_COMPLEX=$(REDMULE_COMPLEX)
 	$(BENDER) script verilator $(common_targs) $(VLT_BENDER)  >$@
 	touch $@
 
@@ -57,8 +71,8 @@ sanity-veri-run:
 	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(BIN_DIR) VLT_TOP_MODULE=$(VLT_TOP_MODULE) TEST=hello-world run-test
 	mv sim/core/verilator_tb.vcd $(VERI_LOG_DIR)/
 
-.PHONY: run-test
-run-test: $(BIN_DIR)/verilator_executable 
+.PHONY: veri-run
+veri-run: $(BIN_DIR)/verilator_executable 
 	@echo "$(BANNER)"
 	@echo "* Running with Verilator: $(BIN_DIR)/verilator_executable "
 	@echo "*               log file: $(VERI_LOG_DIR)/$(TEST).log"
@@ -72,6 +86,22 @@ run-test: $(BIN_DIR)/verilator_executable
 		| tee $(VERI_LOG_DIR)/$(TEST).log
 	mv verilator_tb.vcd $(VERI_LOG_DIR)/$(TEST).vcd
 
+
+.PHONY: run-test
+run-test: $(BIN_DIR)/verilator_executable 
+	@echo "$(BANNER)"
+	@echo "* Running with Verilator: "
+	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
+	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
+	@echo "$(BANNER)"
+	mkdir -p $(VERI_LOG_DIR)
+	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
+	$(BIN_DIR)/verilator_executable  \
+		$(VERI_FLAGS) \
+		"+STIM_INSTR=$(SIM_TEST_INPUTS)/stim_instr.txt" \
+		"+STIM_DATA=$(SIM_TEST_INPUTS)/stim_data.txt" \
+		| tee $(VERI_LOG_DIR)/$(TEST).log
+	mv verilator_tb.vcd $(VERI_LOG_DIR)/
 	
 .PHONY: help
 
