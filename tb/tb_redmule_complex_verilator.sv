@@ -25,14 +25,29 @@ module tb_redmule_complex_verilator
   localparam int unsigned ID = 10;
   localparam int unsigned DW = redmule_pkg::DATA_W;
   localparam int unsigned MP = DW/32;
-  localparam int unsigned MEMORY_SIZE = 192*1024;
-  localparam int unsigned STACK_MEMORY_SIZE = 192*1024;
+  localparam int unsigned MEMORY_SIZE = 32'h30000;
+  localparam int unsigned STACK_MEMORY_SIZE = 32'h30000;
   localparam int unsigned PULP_XPULP = 1;
   localparam int unsigned FPU = 0;
   localparam int unsigned PULP_ZFINX = 0;
   localparam logic [31:0] BASE_ADDR = 32'h1c000000;
   localparam logic [31:0] HWPE_ADDR_BASE_BIT = 20;
-
+//
+/*
+MEMORY
+{
+    instrram    : ORIGIN = 0x1c000000, LENGTH = 0x08000
+    dataram     : ORIGIN = 0x1c010000, LENGTH = 0x30000
+    stack       : ORIGIN = 0x1c040000, LENGTH = 0x30000
+}
+*/
+ localparam logic [31:0] IMEM_ADDR = 32'h1c000000;
+ localparam int unsigned IMEM_SIZE = 32'h08000;
+ localparam logic [31:0] DMEM_ADDR = 32'h1c010000;
+ localparam int unsigned DMEM_SIZE = 32'h30000;
+ localparam logic [31:0] SMEM_ADDR = 32'h1c040000;
+ localparam int unsigned SMEM_SIZE = 32'h30000;
+ localparam int unsigned GMEM_SIZE = SMEM_ADDR+SMEM_SIZE-IMEM_ADDR;
   // global signals
   string stim_instr, stim_data;
   logic test_mode;
@@ -140,8 +155,8 @@ module tb_redmule_complex_verilator
   end
 
   always_comb begin : bind_stack
-    stack[0].req  = core_data_req.req & (core_data_req.addr[31:24] == '0) &
-                    ~core_data_req.addr[HWPE_ADDR_BASE_BIT];
+    stack[0].req  = core_data_req.req & (core_data_req.addr >= SMEM_ADDR) &
+                                        (core_data_req.addr < SMEM_ADDR+SMEM_SIZE) ;
     stack[0].add  = core_data_req.addr;
     stack[0].wen  = ~core_data_req.we;
     stack[0].be   = core_data_req.be;
@@ -173,9 +188,8 @@ module tb_redmule_complex_verilator
   assign redmule_tcdm.r_user  = '0;
 
   assign tcdm[MP].req  = core_data_req.req &
-                         (core_data_req.addr[31:24] != '0) &
-                         (core_data_req.addr[31:24] != 8'h80) &
-                         ~core_data_req.addr[HWPE_ADDR_BASE_BIT];
+                         (core_data_req.addr >= DMEM_ADDR) &
+                         (core_data_req.addr <  DMEM_ADDR + DMEM_SIZE) ;
   assign tcdm[MP].add  = core_data_req.addr;
   assign tcdm[MP].wen  = ~core_data_req.we;
   assign tcdm[MP].be   = core_data_req.be;
@@ -212,40 +226,38 @@ module tb_redmule_complex_verilator
     .tcdm           ( tcdm          )
   );
 
-  tb_dummy_memory  #(
-    .MP             ( 1           ),
-    .MEMORY_SIZE    ( MEMORY_SIZE ),
-    .BASE_ADDR      ( BASE_ADDR   ),
-    .PROB_STALL     ( 0           ),
-    .TCP            ( TCP         ),
-    .TA             ( TA          ),
-    .TT             ( TT          )
+  // tb_tcdm_verilator #(
+  //     .MP         ( MP + 1 ),
+  //     .MEMORY_SIZE(32'h38000),
+  //     .BASE_ADDR(32'h1c000000)
+  // ) i_dummy_dmemory (
+  //     .clk_i   (clk_i),
+  //     .rst_ni  (rst_ni),
+  //     .enable_i(1'b1),
+  //     .tcdm    (tcdm)
+  // );
+
+
+  tb_tcdm_verilator #(
+      .MP         (1),
+      .MEMORY_SIZE(GMEM_SIZE),
+      .BASE_ADDR(IMEM_ADDR)
   ) i_dummy_imemory (
-    .clk_i          ( clk_i       ),
-    .rst_ni         ( rst_ni      ),
-    .clk_delayed_i  ( '0          ),
-    .randomize_i    ( 1'b0        ),
-    .enable_i       ( 1'b1        ),
-    .stallable_i    ( 1'b0        ),
-    .tcdm           ( instr       )
+      .clk_i   (clk_i),
+      .rst_ni  (rst_ni),
+      .enable_i(1'b1),
+      .tcdm    (instr)
   );
 
-  tb_dummy_memory       #(
-    .MP                  ( 1                 ),
-    .MEMORY_SIZE         ( STACK_MEMORY_SIZE ),
-    .BASE_ADDR           ( BASE_ADDR         ),
-    .PROB_STALL          ( 0                 ),
-    .TCP                 ( TCP               ),
-    .TA                  ( TA                ),
-    .TT                  ( TT                )
+  tb_tcdm_verilator #(
+      .MP         (1),
+      .MEMORY_SIZE(SMEM_SIZE),
+      .BASE_ADDR(SMEM_ADDR)
   ) i_dummy_stack_memory (
-    .clk_i               ( clk_i             ),
-    .rst_ni              ( rst_ni            ),
-    .clk_delayed_i       ( '0                ),
-    .randomize_i         ( 1'b0              ),
-    .enable_i            ( 1'b1              ),
-    .stallable_i         ( 1'b0              ),
-    .tcdm                ( stack             )
+      .clk_i   (clk_i),
+      .rst_ni  (rst_ni),
+      .enable_i(1'b1),
+      .tcdm    (stack)
   );
 
   redmule_complex #(
@@ -298,7 +310,7 @@ module tb_redmule_complex_verilator
     int cnt_rd, cnt_wr;
 
     if (!$value$plusargs("STIM_INSTR=%s", stim_instr)) stim_instr = "../../../sw/build/stim_instr.txt";
-    if (!$value$plusargs("STIM_DATA=%s", stim_data)) stim_data = "../../../sw/build/stim_data.txt";
+    if (!$value$plusargs("STIM_DATA=%s", stim_data)) stim_data = "../../../sw/build/verif.hex";
 
     test_mode = 1'b0;
     core_boot_addr = 32'h1C000084;
@@ -309,28 +321,28 @@ module tb_redmule_complex_verilator
 
     // End: WFI + returned != -1 signals end-of-computation
     while(~core_sleep || errors==-1) @(posedge clk_i);
-    cnt_rd = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[0] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[1] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[2] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[3] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[4] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[5] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[6] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[7] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[8];
+    // cnt_rd = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[0] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[1] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[2] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[3] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[4] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[5] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[6] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[7] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[8];
 
-    cnt_wr = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[0] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[1] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[2] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[3] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[4] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[5] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[6] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[7] +
-             tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[8];
+    // cnt_wr = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[0] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[1] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[2] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[3] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[4] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[5] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[6] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[7] +
+    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[8];
 
-    $display("[TB TCA] - cnt_rd=%-8d", cnt_rd);
-    $display("[TB TCA] - cnt_wr=%-8d", cnt_wr);
+    // $display("[TB TCA] - cnt_rd=%-8d", cnt_rd);
+    // $display("[TB TCA] - cnt_wr=%-8d", cnt_wr);
     if(errors != 0) begin
       $display("[TB TCA] - Fail!");
       $error("[TB TCA] - errors=%08x", errors);

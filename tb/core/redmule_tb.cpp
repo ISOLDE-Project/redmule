@@ -37,7 +37,7 @@
 typedef TOPLEVEL_NAME VTopModule;
 typedef std::unique_ptr<VTopModule> dut_ptr;
 
-
+vluint64_t timeOut{207374};
 
 void dut_reset(dut_ptr&dut, const vluint64_t sim_time, const vluint64_t rst_time, const vluint64_t rst_cycles) {
   dut->rst_ni = 0;
@@ -66,7 +66,7 @@ int main(int argc, char **argv, char **env) {
   tfp->open("verilator_tb.vcd");
 
   vluint64_t sim_time = 0;
-  while (!Verilated::gotFinish()) {
+  while (!Verilated::gotFinish() && (sim_time< timeOut)) {
     // Reset DUT
     dut_reset(dut, sim_time, 20, 10);
     // Start clock toggling
