@@ -9,6 +9,7 @@
 #ifdef USE_BSP
 #include <bsp/tinyprintf.h>
 #include <bsp/simple_system_common.h>
+#include <bsp/simple_system_regs.h>
 #else
 #include "tinyprintf.h"
 #endif

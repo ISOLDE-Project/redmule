@@ -10,13 +10,13 @@ timeunit 1ps; timeprecision 1ps;
 module tb_redmule_complex_verilator
   import redmule_pkg::*;
 #(
-  parameter TCP = 1.0ns, // clock period, 1 GHz clock
-  parameter TA  = 0.2ns, // application time
-  parameter TT  = 0.8ns  // test time
-)(
-  input logic clk_i,
-  input logic rst_ni,
-  input logic fetch_enable_i
+    parameter TCP = 1.0ns,  // clock period, 1 GHz clock
+    parameter TA  = 0.2ns,  // application time
+    parameter TT  = 0.8ns   // test time
+) (
+    input logic clk_i,
+    input logic rst_ni,
+    input logic fetch_enable_i
 );
 
   // parameters
@@ -24,7 +24,7 @@ module tb_redmule_complex_verilator
   localparam int unsigned NC = 1;
   localparam int unsigned ID = 10;
   localparam int unsigned DW = redmule_pkg::DATA_W;
-  localparam int unsigned MP = DW/32;
+  localparam int unsigned MP = DW / 32;
   localparam int unsigned MEMORY_SIZE = 32'h30000;
   localparam int unsigned STACK_MEMORY_SIZE = 32'h30000;
   localparam int unsigned PULP_XPULP = 1;
@@ -32,8 +32,8 @@ module tb_redmule_complex_verilator
   localparam int unsigned PULP_ZFINX = 0;
   localparam logic [31:0] BASE_ADDR = 32'h1c000000;
   localparam logic [31:0] HWPE_ADDR_BASE_BIT = 20;
-//
-/*
+  //
+  /*
 MEMORY
 {
     instrram    : ORIGIN = 0x1c000000, LENGTH = 0x08000
@@ -41,63 +41,63 @@ MEMORY
     stack       : ORIGIN = 0x1c040000, LENGTH = 0x30000
 }
 */
- localparam logic [31:0] IMEM_ADDR = 32'h1c000000;
- localparam int unsigned IMEM_SIZE = 32'h08000;
- localparam logic [31:0] DMEM_ADDR = 32'h1c010000;
- localparam int unsigned DMEM_SIZE = 32'h30000;
- localparam logic [31:0] SMEM_ADDR = 32'h1c040000;
- localparam int unsigned SMEM_SIZE = 32'h30000;
- localparam int unsigned GMEM_SIZE = SMEM_ADDR+SMEM_SIZE-IMEM_ADDR;
+  localparam logic [31:0] IMEM_ADDR = 32'h1c000000;
+  localparam int unsigned IMEM_SIZE = 32'h08000;
+  localparam logic [31:0] DMEM_ADDR = 32'h1c010000;
+  localparam int unsigned DMEM_SIZE = 32'h30000;
+  localparam logic [31:0] SMEM_ADDR = 32'h1c040000;
+  localparam int unsigned SMEM_SIZE = 32'h30000;
+  localparam int unsigned GMEM_SIZE = SMEM_ADDR + SMEM_SIZE - IMEM_ADDR;
   // global signals
   string stim_instr, stim_data;
   logic test_mode;
   logic [31:0] core_boot_addr;
   logic redmule_busy;
 
-  hwpe_stream_intf_tcdm instr[0:0]  (.clk(clk_i));
-  hwpe_stream_intf_tcdm stack[0:0]  (.clk(clk_i));
-  hwpe_stream_intf_tcdm tcdm [MP:0] (.clk(clk_i));
+  hwpe_stream_intf_tcdm instr[0:0] (.clk(clk_i));
+  hwpe_stream_intf_tcdm stack[0:0] (.clk(clk_i));
+  hwpe_stream_intf_tcdm tcdm[MP:0] (.clk(clk_i));
 
-  logic [NC-1:0][1:0] evt;
+  logic [NC-1:0][ 1:0] evt;
 
   logic [MP-1:0]       tcdm_req;
   logic [MP-1:0]       tcdm_gnt;
   logic [MP-1:0][31:0] tcdm_add;
   logic [MP-1:0]       tcdm_wen;
-  logic [MP-1:0][3:0]  tcdm_be;
+  logic [MP-1:0][ 3:0] tcdm_be;
   logic [MP-1:0][31:0] tcdm_data;
   logic [MP-1:0][31:0] tcdm_r_data;
   logic [MP-1:0]       tcdm_r_valid;
   logic                tcdm_r_opc;
   logic                tcdm_r_user;
-   
-  logic          periph_req;
-  logic          periph_gnt;
-  logic [31:0]   periph_add;
-  logic          periph_wen;
-  logic [3:0]    periph_be;
-  logic [31:0]   periph_data;
-  logic [ID-1:0] periph_id;
-  logic [31:0]   periph_r_data;
-  logic          periph_r_valid;
-  logic [ID-1:0] periph_r_id;
 
-  logic          instr_req;
-  logic          instr_gnt;
-  logic          instr_rvalid;
-  logic [31:0]   instr_addr;
-  logic [31:0]   instr_rdata;
+  logic                periph_req;
+  logic                periph_gnt;
+  logic [  31:0]       periph_add;
+  logic                periph_wen;
+  logic [   3:0]       periph_be;
+  logic [  31:0]       periph_data;
+  logic [ID-1:0]       periph_id;
+  logic [  31:0]       periph_r_data;
+  logic                periph_r_valid;
+  logic [ID-1:0]       periph_r_id;
 
-  logic          data_req;
-  logic          data_gnt;
-  logic          data_rvalid;
-  logic          data_we;
-  logic [3:0]    data_be;
-  logic [31:0]   data_addr;
-  logic [31:0]   data_wdata;
-  logic [31:0]   data_rdata;
-  logic          data_err;
-  logic          core_sleep;
+  logic                instr_req;
+  logic                instr_gnt;
+  logic                instr_rvalid;
+  logic [  31:0]       instr_addr;
+  logic [  31:0]       instr_rdata;
+
+  logic                data_req;
+  logic                data_gnt;
+  logic                data_rvalid;
+  logic                data_we;
+  logic [   3:0]       data_be;
+  logic [  31:0]       data_addr;
+  logic [  31:0]       data_wdata;
+  logic [  31:0]       data_rdata;
+  logic                data_err;
+  logic                core_sleep;
 
   typedef struct packed {
     logic        req;
@@ -144,55 +144,53 @@ MEMORY
   end
 
   always_comb begin : bind_instrs
-    instr[0].req  = core_inst_req.req;
-    instr[0].add  = core_inst_req.addr;
-    instr[0].wen  = 1'b1;
-    instr[0].be   = '0;
+    instr[0].req = core_inst_req.req;
+    instr[0].add = core_inst_req.addr;
+    instr[0].wen = 1'b1;
+    instr[0].be = '0;
     instr[0].data = '0;
-    core_inst_rsp.gnt   = instr[0].gnt;
+    core_inst_rsp.gnt = instr[0].gnt;
     core_inst_rsp.valid = instr[0].r_valid;
-    core_inst_rsp.data  = instr[0].r_data;
+    core_inst_rsp.data = instr[0].r_data;
   end
 
   always_comb begin : bind_stack
     stack[0].req  = core_data_req.req & (core_data_req.addr >= SMEM_ADDR) &
                                         (core_data_req.addr < SMEM_ADDR+SMEM_SIZE) ;
-    stack[0].add  = core_data_req.addr;
-    stack[0].wen  = ~core_data_req.we;
-    stack[0].be   = core_data_req.be;
+    stack[0].add = core_data_req.addr;
+    stack[0].wen = ~core_data_req.we;
+    stack[0].be = core_data_req.be;
     stack[0].data = core_data_req.data;
   end
 
   logic other_r_valid;
   always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (~rst_ni)
-      other_r_valid <= '0;
-    else
-      other_r_valid <= core_data_req.req & (core_data_req.addr[31:24] == 8'h80);
+    if (~rst_ni) other_r_valid <= '0;
+    else other_r_valid <= core_data_req.req & (core_data_req.addr[31:24] == 8'h80);
   end
 
-  for(genvar ii=0; ii<MP; ii++) begin : tcdm_binding
-    assign tcdm[ii].req  = redmule_tcdm.req;
-    assign tcdm[ii].add  = redmule_tcdm.add + ii*4;
-    assign tcdm[ii].wen  = redmule_tcdm.wen;
-    assign tcdm[ii].be   = redmule_tcdm.be[(ii+1)*4-1:ii*4];
-    assign tcdm[ii].data = redmule_tcdm.data[(ii+1)*32-1:ii*32];
+  for (genvar ii = 0; ii < MP; ii++) begin : tcdm_binding
+    assign tcdm[ii].req     = redmule_tcdm.req;
+    assign tcdm[ii].add     = redmule_tcdm.add + ii * 4;
+    assign tcdm[ii].wen     = redmule_tcdm.wen;
+    assign tcdm[ii].be      = redmule_tcdm.be[(ii+1)*4-1:ii*4];
+    assign tcdm[ii].data    = redmule_tcdm.data[(ii+1)*32-1:ii*32];
     assign tcdm_gnt[ii]     = tcdm[ii].gnt;
     assign tcdm_r_valid[ii] = tcdm[ii].r_valid;
     assign tcdm_r_data[ii]  = tcdm[ii].r_data;
   end
-  assign redmule_tcdm.gnt     = &tcdm_gnt;
-  assign redmule_tcdm.r_data  = { >> {tcdm_r_data} };
+  assign redmule_tcdm.gnt = &tcdm_gnt;
+  assign redmule_tcdm.r_data = {tcdm_r_data};
   assign redmule_tcdm.r_valid = &tcdm_r_valid;
-  assign redmule_tcdm.r_opc   = '0;
-  assign redmule_tcdm.r_user  = '0;
+  assign redmule_tcdm.r_opc = '0;
+  assign redmule_tcdm.r_user = '0;
 
   assign tcdm[MP].req  = core_data_req.req &
                          (core_data_req.addr >= DMEM_ADDR) &
                          (core_data_req.addr <  DMEM_ADDR + DMEM_SIZE) ;
-  assign tcdm[MP].add  = core_data_req.addr;
-  assign tcdm[MP].wen  = ~core_data_req.we;
-  assign tcdm[MP].be   = core_data_req.be;
+  assign tcdm[MP].add = core_data_req.addr;
+  assign tcdm[MP].wen = ~core_data_req.we;
+  assign tcdm[MP].be = core_data_req.be;
   assign tcdm[MP].data = core_data_req.data;
 
   assign core_data_rsp.gnt = periph_req ?
@@ -203,10 +201,7 @@ MEMORY
   assign core_data_rsp.data = periph_r_valid   ? periph_r_data    :
                               stack[0].r_valid ? stack[0].r_data  :
                                                  tcdm[MP].r_valid ? tcdm[MP].r_data : '0;
-  assign core_data_rsp.valid = periph_r_valid   |
-                               stack[0].r_valid |
-                               tcdm[MP].r_valid |
-                               other_r_valid    ;
+  assign core_data_rsp.valid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | other_r_valid;
 
   tb_dummy_memory  #(
     .MP             ( MP + 1        ),
@@ -227,9 +222,9 @@ MEMORY
   );
 
   // tb_tcdm_verilator #(
-  //     .MP         ( MP + 1 ),
-  //     .MEMORY_SIZE(32'h38000),
-  //     .BASE_ADDR(32'h1c000000)
+  //     .MP         (MP + 1),
+  //     .MEMORY_SIZE(GMEM_SIZE),
+  //     .BASE_ADDR  (IMEM_ADDR)
   // ) i_dummy_dmemory (
   //     .clk_i   (clk_i),
   //     .rst_ni  (rst_ni),
@@ -241,7 +236,7 @@ MEMORY
   tb_tcdm_verilator #(
       .MP         (1),
       .MEMORY_SIZE(GMEM_SIZE),
-      .BASE_ADDR(IMEM_ADDR)
+      .BASE_ADDR  (IMEM_ADDR)
   ) i_dummy_imemory (
       .clk_i   (clk_i),
       .rst_ni  (rst_ni),
@@ -252,7 +247,7 @@ MEMORY
   tb_tcdm_verilator #(
       .MP         (1),
       .MEMORY_SIZE(SMEM_SIZE),
-      .BASE_ADDR(SMEM_ADDR)
+      .BASE_ADDR  (SMEM_ADDR)
   ) i_dummy_stack_memory (
       .clk_i   (clk_i),
       .rst_ni  (rst_ni),
@@ -261,40 +256,39 @@ MEMORY
   );
 
   redmule_complex #(
-    .CoreType           ( redmule_pkg::CV32X  ), // CV32E40P, CV32E40X, IBEX, SNITCH, CVA6
-    .ID_WIDTH           ( ID                  ),
-    .N_CORES            ( NC                  ),
-    .DW                 ( DW                  ), // TCDM port dimension (in bits)
-    .MP                 ( DW/32               ),
-    .NumIrqs            ( 0                   ),
-    .AddrWidth          ( 32                  ),
-    .core_data_req_t    ( core_data_req_t     ),
-    .core_data_rsp_t    ( core_data_rsp_t     ),
-    .core_inst_req_t    ( core_inst_req_t     ),
-    .core_inst_rsp_t    ( core_inst_rsp_t     )
-  ) i_dut               (
-    .clk_i              ( clk_i            ),
-    .rst_ni             ( rst_ni           ),
-    .test_mode_i        ( test_mode        ),
-    .fetch_enable_i     ( fetch_enable_i   ),
-    .boot_addr_i        ( core_boot_addr   ),
-    .irq_i              ( '0               ),
-    .irq_id_o           (                  ),
-    .irq_ack_o          (                  ),
-    .core_sleep_o       ( core_sleep       ),
-    .core_inst_rsp_i    ( core_inst_rsp    ),
-    .core_inst_req_o    ( core_inst_req    ),
-    .core_data_rsp_i    ( core_data_rsp    ),
-    .core_data_req_o    ( core_data_req    ),
-    .tcdm               ( redmule_tcdm     )
+      .CoreType       (redmule_pkg::CV32X),  // CV32E40P, CV32E40X, IBEX, SNITCH, CVA6
+      .ID_WIDTH       (ID),
+      .N_CORES        (NC),
+      .DW             (DW),                  // TCDM port dimension (in bits)
+      .MP             (DW / 32),
+      .NumIrqs        (0),
+      .AddrWidth      (32),
+      .core_data_req_t(core_data_req_t),
+      .core_data_rsp_t(core_data_rsp_t),
+      .core_inst_req_t(core_inst_req_t),
+      .core_inst_rsp_t(core_inst_rsp_t)
+  ) i_dut (
+      .clk_i          (clk_i),
+      .rst_ni         (rst_ni),
+      .test_mode_i    (test_mode),
+      .fetch_enable_i (fetch_enable_i),
+      .boot_addr_i    (core_boot_addr),
+      .irq_i          ('0),
+      .irq_id_o       (),
+      .irq_ack_o      (),
+      .core_sleep_o   (core_sleep),
+      .core_inst_rsp_i(core_inst_rsp),
+      .core_inst_req_o(core_inst_req),
+      .core_data_rsp_i(core_data_rsp),
+      .core_data_req_o(core_data_req),
+      .tcdm           (redmule_tcdm)
   );
 
   integer f_x, f_W, f_y, f_tau;
   logic start;
 
-  int errors = -1;
-  always_ff @(posedge clk_i)
-  begin
+  int   errors = -1;
+  always_ff @(posedge clk_i) begin
     if((core_data_req.addr == 32'h80000000 ) &&
        (core_data_req.we & core_data_req.req == 1'b1)) begin
       errors = core_data_req.data;
@@ -309,18 +303,31 @@ MEMORY
     integer id;
     int cnt_rd, cnt_wr;
 
-    if (!$value$plusargs("STIM_INSTR=%s", stim_instr)) stim_instr = "../../../sw/build/stim_instr.txt";
-    if (!$value$plusargs("STIM_DATA=%s", stim_data)) stim_data = "../../../sw/build/verif.hex";
+    // Load instruction and data memory
+    if (!$value$plusargs("STIM_INSTR=%s", stim_instr)) begin
+      $display("No STIM_INSTR specified");
+      $finish;
+    end else begin
+      $display("[TESTBENCH] @ t=%0t: loading %0s into imemory", $time, stim_instr);
+      $readmemh(stim_instr, tb_redmule_complex_verilator.i_dummy_imemory.memory);
+    end
+
+    if (!$value$plusargs("STIM_DATA=%s", stim_data)) begin
+      $display("No STIM_DATA specified");
+      $finish;
+    end else begin
+      $display("[TESTBENCH] @ t=%0t: loading %0s into dmemory", $time, stim_data);
+      $readmemh(stim_data, tb_redmule_complex_verilator.i_dummy_dmemory.memory);
+    end
 
     test_mode = 1'b0;
     core_boot_addr = 32'h1C000084;
 
-    // Load instruction and data memory
-    $readmemh(stim_instr, tb_redmule_complex_verilator.i_dummy_imemory.memory);
-    $readmemh(stim_data,  tb_redmule_complex_verilator.i_dummy_dmemory.memory);
+
+
 
     // End: WFI + returned != -1 signals end-of-computation
-    while(~core_sleep || errors==-1) @(posedge clk_i);
+    while (~core_sleep || errors == -1) @(posedge clk_i);
     // cnt_rd = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[0] +
     //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[1] +
     //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[2] +
@@ -343,7 +350,7 @@ MEMORY
 
     // $display("[TB TCA] - cnt_rd=%-8d", cnt_rd);
     // $display("[TB TCA] - cnt_wr=%-8d", cnt_wr);
-    if(errors != 0) begin
+    if (errors != 0) begin
       $display("[TB TCA] - Fail!");
       $error("[TB TCA] - errors=%08x", errors);
     end else begin
@@ -353,4 +360,4 @@ MEMORY
     $finish;
   end
 
-endmodule // tb_redmule_complex_verilator
+endmodule  // tb_redmule_complex_verilator

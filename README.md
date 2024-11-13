@@ -23,7 +23,7 @@ make veri-clean
 make REDMULE_COMPLEX=1  run-test
 ```
 ```
- make REDMULE_COMPLEX=1  veri-clean verilate run-test
+ make REDMULE_COMPLEX=1  veri-clean verilate sw-clean sw-build run-test
 ```
 ### build simulation and run the test program
 ```sh

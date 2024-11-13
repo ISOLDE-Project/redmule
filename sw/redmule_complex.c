@@ -37,6 +37,9 @@ int main() {
   uint32_t y_addr = *(uint32_t *)&y;
   uint32_t cfg_reg0 = ((k_size << 16) | (m_size << 0));
   uint32_t cfg_reg1 = (n_size << 0);
+
+  tfp_printf("[TCA] Starting test. Godspeed!\n");
+
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
   asm volatile("addi t2, %0, 0" ::"r"(y_addr));

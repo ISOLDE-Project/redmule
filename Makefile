@@ -79,7 +79,7 @@ $(STIM_INSTR) $(STIM_DATA) $(BIN).hex: $(BIN)
 		$(BIN) \
 		$(VSIM_DIR)/verif.hex
 	python $(SCRIPTS_DIR)/addr_offset.py  $(VSIM_DIR)/verif.hex  $(VSIM_DIR)/verif-m.hex 0x1c000000
-
+	python $(SCRIPTS_DIR)/addr_offset.py  $(VSIM_DIR)/verif.hex  $(VSIM_DIR)/verif-d.hex 0x1c000000
 
 $(BIN): $(CRT) $(OBJ)
 	$(RV_LD) $(RV_LD_OPTS) -o $(BIN) $(CRT) $(OBJ) -T$(LINKSCRIPT)
