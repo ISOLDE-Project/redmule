@@ -56,18 +56,34 @@ void dut_set_fetch_en(dut_ptr&dut, const vluint64_t sim_time, bool value) {
 }
 
 int main(int argc, char **argv, char **env) {
-  // Random values used to initialize signals
-  Verilated::commandArgs(argc, argv);
-  auto dut = std::make_unique<VTopModule>();
+  
+      // Set up Verilated context
+    auto contextp = std::make_unique<VerilatedContext>();
+    contextp->commandArgs(argc, argv); // Pass command-line args to Verilator
+    contextp->time(0); // Initialize time to 0
+    // Set debug level, 0 is off, 9 is highest presently used
+    // May be overridden by commandArgs argument parsing
+    contextp->debug(0);
 
-  Verilated::traceEverOn(true);
+    // Randomization reset policy
+    // May be overridden by commandArgs argument parsing
+    contextp->randReset(2);
+
+    // Verilator must compute traced signals
+    contextp->traceEverOn(true);
+
+    // Instantiate the DUT
+    auto dut = std::make_unique<VTopModule>(contextp.get());
+
+
   auto tfp = std::make_unique<VerilatedVcdC>();
   dut->trace(tfp.get(), 5);
   tfp->open("verilator_tb.vcd");
 
-  vluint64_t sim_time = 0;
-  while (!Verilated::gotFinish() && (sim_time< timeOut)) {
+  //vluint64_t sim_time = 0;
+  while (!Verilated::gotFinish() && (contextp->time() < timeOut)){
     // Reset DUT
+    auto sim_time = contextp->time();
     dut_reset(dut, sim_time, 20, 10);
     // Start clock toggling
     dut->clk_i ^= 1;
@@ -75,7 +91,8 @@ int main(int argc, char **argv, char **env) {
     dut_set_fetch_en(dut, sim_time, 1);
     dut->eval();
     tfp->dump(sim_time);
-    sim_time++;
+     // Increment time
+    contextp->timeInc(1); // Increment by 1 time unit (adjust as needed)
   }
 
   dut->final();
