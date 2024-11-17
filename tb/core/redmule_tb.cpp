@@ -37,7 +37,7 @@
 typedef TOPLEVEL_NAME VTopModule;
 typedef std::unique_ptr<VTopModule> dut_ptr;
 
-vluint64_t timeOut{207374};
+vluint64_t timeOut{8490};
 
 void dut_reset(dut_ptr&dut, const vluint64_t sim_time, const vluint64_t rst_time, const vluint64_t rst_cycles) {
   dut->rst_ni = 0;

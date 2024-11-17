@@ -32,6 +32,8 @@ module tb_redmule_complex_verilator
   localparam int unsigned PULP_ZFINX = 0;
   localparam logic [31:0] BASE_ADDR = 32'h1c000000;
   localparam logic [31:0] HWPE_ADDR_BASE_BIT = 20;
+
+  int          fh; //filehandle
   //
   /*
 MEMORY
@@ -203,34 +205,34 @@ MEMORY
                                                  tcdm[MP].r_valid ? tcdm[MP].r_data : '0;
   assign core_data_rsp.valid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | other_r_valid;
 
-  tb_dummy_memory  #(
-    .MP             ( MP + 1        ),
-    .MEMORY_SIZE    ( MEMORY_SIZE   ),
-    .BASE_ADDR      ( 32'h1c010000  ),
-    .PROB_STALL     ( PROB_STALL    ),
-    .TCP            ( TCP           ),
-    .TA             ( TA            ),
-    .TT             ( TT            )
-  ) i_dummy_dmemory (
-    .clk_i          ( clk_i         ),
-    .rst_ni         ( rst_ni        ),
-    .clk_delayed_i  ( '0            ),
-    .randomize_i    ( 1'b0          ),
-    .enable_i       ( 1'b1          ),
-    .stallable_i    ( 1'b1          ),
-    .tcdm           ( tcdm          )
-  );
-
-  // tb_tcdm_verilator #(
-  //     .MP         (MP + 1),
-  //     .MEMORY_SIZE(GMEM_SIZE),
-  //     .BASE_ADDR  (IMEM_ADDR)
+  // tb_dummy_memory  #(
+  //   .MP             ( MP + 1        ),
+  //   .MEMORY_SIZE    ( MEMORY_SIZE   ),
+  //   .BASE_ADDR      ( 32'h1c010000  ),
+  //   .PROB_STALL     ( PROB_STALL    ),
+  //   .TCP            ( TCP           ),
+  //   .TA             ( TA            ),
+  //   .TT             ( TT            )
   // ) i_dummy_dmemory (
-  //     .clk_i   (clk_i),
-  //     .rst_ni  (rst_ni),
-  //     .enable_i(1'b1),
-  //     .tcdm    (tcdm)
+  //   .clk_i          ( clk_i         ),
+  //   .rst_ni         ( rst_ni        ),
+  //   .clk_delayed_i  ( '0            ),
+  //   .randomize_i    ( 1'b0          ),
+  //   .enable_i       ( 1'b1          ),
+  //   .stallable_i    ( 1'b1          ),
+  //   .tcdm           ( tcdm          )
   // );
+
+  tb_tcdm_verilator #(
+      .MP         (MP + 1),
+      .MEMORY_SIZE(GMEM_SIZE),
+      .BASE_ADDR  (IMEM_ADDR)
+  ) i_dummy_dmemory (
+      .clk_i   (clk_i),
+      .rst_ni  (rst_ni),
+      .enable_i(1'b1),
+      .tcdm    (tcdm)
+  );
 
 
   tb_tcdm_verilator #(
@@ -284,6 +286,109 @@ MEMORY
       .tcdm           (redmule_tcdm)
   );
 
+    task dump_ctrl_fsm();
+    $fwrite(fh, "Simulation Time: %t\n", $time); // Print the current simulation time
+    $fwrite(fh, "ctrl_busy: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.ctrl_busy);
+    // $fwrite(fh, "instr_req: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.instr_req);
+    // $fwrite(fh, "pc_set: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.pc_set);
+    // $fwrite(fh, "pc_set_clicv: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.pc_set_clicv);
+    // $fwrite(fh, "pc_set_tbljmp: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.pc_set_tbljmp);
+    // $fwrite(fh, "pc_mux: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.pc_mux);
+    // $fwrite(fh, "mtvec_pc_mux: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.mtvec_pc_mux);
+    // $fwrite(fh, "mtvt_pc_mux: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.mtvt_pc_mux);
+    // $fwrite(fh, "nmi_mtvec_index: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.nmi_mtvec_index);
+    // $fwrite(fh, "block_data_addr: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.block_data_addr);
+    // $fwrite(fh, "irq_ack: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.irq_ack);
+    // $fwrite(fh, "irq_id: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.irq_id);
+    // $fwrite(fh, "irq_level: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.irq_level);
+    // $fwrite(fh, "irq_priv: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.irq_priv);
+    // $fwrite(fh, "irq_shv: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.irq_shv);
+    // $fwrite(fh, "dbg_ack: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.dbg_ack);
+    // $fwrite(fh, "debug_mode_if: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_mode_if);
+    // $fwrite(fh, "debug_mode: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_mode);
+    // $fwrite(fh, "debug_cause: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_cause);
+    // $fwrite(fh, "debug_csr_save: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_csr_save);
+    // $fwrite(fh, "debug_trigger_hit: %h\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_trigger_hit);
+    // $fwrite(fh, "debug_trigger_hit_update: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_trigger_hit_update);
+    // $fwrite(fh, "debug_no_sleep: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_no_sleep);
+    // $fwrite(fh, "debug_havereset: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_havereset);
+    // $fwrite(fh, "debug_running: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_running);
+    // $fwrite(fh, "debug_halted: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.debug_halted);
+    $fwrite(fh, "wake_from_sleep: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.wake_from_sleep);
+    $fwrite(fh, "pipe_pc: %h\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.pipe_pc);
+    // $fwrite(fh, "csr_cause: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.csr_cause);
+    // $fwrite(fh, "csr_restore_mret: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.csr_restore_mret);
+    // $fwrite(fh, "csr_restore_mret_ptr: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.csr_restore_mret_ptr);
+    // $fwrite(fh, "csr_restore_dret: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.csr_restore_dret);
+    // $fwrite(fh, "csr_save_cause: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.csr_save_cause);
+    // $fwrite(fh, "pending_nmi: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.pending_nmi);
+    // $fwrite(fh, "mhpmevent: %h\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.mhpmevent);
+    // $fwrite(fh, "halt_if: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.halt_if);
+    // $fwrite(fh, "halt_id: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.halt_id);
+    // $fwrite(fh, "halt_ex: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.halt_ex);
+    // $fwrite(fh, "halt_wb: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.halt_wb);
+    // $fwrite(fh, "halt_limited_wb: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.halt_limited_wb);
+    // $fwrite(fh, "kill_if: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.kill_if);
+    // $fwrite(fh, "kill_id: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.kill_id);
+    // $fwrite(fh, "kill_ex: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.kill_ex);
+    // $fwrite(fh, "kill_wb: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.kill_wb);
+    // $fwrite(fh, "kill_xif: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.kill_xif);
+    // $fwrite(fh, "exception_in_wb: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.exception_in_wb);
+    // $fwrite(fh, "exception_cause_wb: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.ctrl_fsm_o.exception_cause_wb);
+    //$fwrite(fh, "xif_commit_if.result_valid: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.xif_commit_if.result_valid);
+  //$fwrite(fh, "xif_commit_if.result_ready: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.xif_commit_if.result_ready);
+    $fwrite(fh, "xif_csr_error_i: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.controller_i.xif_csr_error_i);
+  endtask
+
+task dump_core_sleep_unit();
+   $fwrite(fh, "Simulation Time: %t\n", $time); // Print the current simulation time
+  $fwrite(fh, "core_sleep_o: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.sleep_unit_i.core_sleep_o);
+  $fwrite(fh, "fetch_enable_i: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.sleep_unit_i.fetch_enable_i);
+  $fwrite(fh, "fetch_enable_o: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.sleep_unit_i.fetch_enable_o);
+
+  // Core status
+  $fwrite(fh, "if_busy_i: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.sleep_unit_i.if_busy_i);
+  $fwrite(fh, "lsu_busy_i: %b\n", tb_redmule_complex_verilator.i_dut.gen_cv32e40x.i_core.sleep_unit_i.lsu_busy_i);
+  
+  endtask
+
+
+
+
+
+    
+  //   enum logic [1:0] {NONE,READ,WRITE } local_wen;
+  //   always_ff @(posedge clk_i) begin
+  //     if (~rst_ni) begin
+  //         local_wen =NONE;
+  //     end
+  //     if (redmule_tcdm.req) begin
+  //       if (redmule_tcdm.gnt) begin
+  //         if (redmule_tcdm.wen) 
+  //           // Log read operation
+  //           $fwrite(fh, "%t : read address=%h\n", $time, redmule_tcdm.add);
+  //         else begin
+  //           $fwrite(fh, "%t : write address=%h\n", $time, redmule_tcdm.add);
+  //         end
+  //         if (local_wen == READ & redmule_tcdm.r_valid) begin
+  //           $fwrite(fh, "%t : r_data=%h\n", $time, redmule_tcdm.r_data);
+  //           $fwrite(fh, "%t : r_opc=%h\n", $time, redmule_tcdm.r_opc);
+  //           $fwrite(fh, "%t : r_user=%h\n", $time, redmule_tcdm.r_user);
+  //           end 
+  //         if(local_wen == WRITE)
+  //           $fwrite(fh, "%t : data=%h\n", $time, redmule_tcdm.data);
+  //         // Common fields
+  //         $fwrite(fh, "%t : be=%h\n", $time, redmule_tcdm.be);
+  //         $fwrite(fh, "%t : boffs=%h\n", $time, redmule_tcdm.boffs);
+  //         $fwrite(fh, "%t : user=%h\n", $time, redmule_tcdm.user);
+  //         local_wen = redmule_tcdm.wen ? READ:WRITE;
+  //       end else begin
+  //         local_wen =NONE;
+  //       end
+
+  //   end
+  // end
+
   integer f_x, f_W, f_y, f_tau;
   logic start;
 
@@ -297,12 +402,14 @@ MEMORY
        (core_data_req.we & core_data_req.req == 1'b1)) begin
       $write("%c", core_data_req.data);
     end
+    dump_ctrl_fsm();
+    dump_core_sleep_unit();
   end
 
   initial begin
     integer id;
     int cnt_rd, cnt_wr;
-
+    fh = $fopen("rtl_debug_trace.log", "w");
     // Load instruction and data memory
     if (!$value$plusargs("STIM_INSTR=%s", stim_instr)) begin
       $display("No STIM_INSTR specified");
@@ -360,4 +467,10 @@ MEMORY
     $finish;
   end
 
+  // close output file for writing
+  final begin
+   
+      $fclose(fh);
+   
+  end
 endmodule  // tb_redmule_complex_verilator

@@ -53,6 +53,13 @@ veri-clean:
 	rm -f manifest.flist
 	make -C sim/core -f Makefile.verilator CV_CORE_MANIFEST=${CURDIR}/manifest.flist  SIM_RESULTS=$(BIN_DIR) VLT_TOP_MODULE=$(VLT_TOP_MODULE)  $@
 
+.PHONY: sim-build 
+sim-build:
+	rm -f  $(BIN_DIR)/verilator_executable 
+	$(MAKE) -C sim/core/$(VLT_TOP_MODULE)_cobj_dir -j$(num_cores_half) -f V$(VLT_TOP_MODULE).mk
+	mkdir -p $(SIM_RESULTS)
+	mv sim/core/$(VLT_TOP_MODULE)_cobj_dir/V$(VLT_TOP_MODULE) $(SIM_RESULTS)/verilator_executable
+
 verilate: $(BIN_DIR)/verilator_executable
 
 manifest.flist: Bender.yml
@@ -102,7 +109,25 @@ run-test: $(BIN_DIR)/verilator_executable
 		"+STIM_DATA=$(SIM_TEST_INPUTS)/stim_data.txt" \
 		| tee $(VERI_LOG_DIR)/$(TEST).log
 	mv verilator_tb.vcd $(VERI_LOG_DIR)/
+	mv rtl_debug_trace.log $(VERI_LOG_DIR)/
 	
+
+.PHONY: run-test2
+run-test2: $(BIN_DIR)/verilator_executable 
+	@echo "$(BANNER)"
+	@echo "* Running with Verilator: "
+	@echo "*                         logfile in $(VERI_LOG_DIR)/$(TEST).log"
+	@echo "*                         *.vcd   in $(VERI_LOG_DIR)"
+	@echo "$(BANNER)"
+	mkdir -p $(VERI_LOG_DIR)
+	rm -f $(VERI_LOG_DIR)/verilator_tb.vcd
+	$(BIN_DIR)/verilator_executable  \
+		$(VERI_FLAGS) \
+		"+STIM_INSTR=$(SIM_TEST_INPUTS)/verif-m.hex" \
+		"+STIM_DATA=$(SIM_TEST_INPUTS)/verif-d.hex" \
+		| tee $(VERI_LOG_DIR)/$(TEST).log
+	mv verilator_tb.vcd $(VERI_LOG_DIR)/
+	mv rtl_debug_trace.log $(VERI_LOG_DIR)/
 .PHONY: help
 
 help:
