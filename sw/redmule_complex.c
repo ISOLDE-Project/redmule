@@ -38,7 +38,9 @@ int main() {
   uint32_t cfg_reg0 = ((k_size << 16) | (m_size << 0));
   uint32_t cfg_reg1 = (n_size << 0);
 
-  tfp_printf("[TCA] Starting test. Godspeed!\n");
+  tfp_printf("[APP TCA] Starting test. Godspeed!\n");
+  
+  START_TIMING(REDMULE_TCA);
 
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
@@ -86,12 +88,15 @@ int main() {
 
   // Wait for end of computation
   asm volatile("wfi" ::: "memory");
-
+  END_TIMING(REDMULE_TCA);
+  
   errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
 
-  *(int *)0x80000000 = errors;
+  tfp_printf("[APP TCA] Terminated test with %d errors. See you!\n", errors);
 
-  tfp_printf("[TCA] Terminated test with %d errors. See you!\n", errors);
+#ifndef USE_BSP
+  *(int *)0x80000000 = errors;
+#endif
 
   return errors;
 }

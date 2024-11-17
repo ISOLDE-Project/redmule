@@ -282,18 +282,27 @@ module tb_redmule_verilator (
       $display("No firmware specified");
       $finish;
     end
-
+       test_mode = 1'b0;
     core_boot_addr = BOOT_ADDR;
   end
 
-
+task endSimulation(input int errors);
+    if (errors != 0) begin
+        $display("[TB TCA] @ t=%0t - Fail!", $time);
+        $error("[TB TCA] @ t=%0t - errors=%08x", $time, errors);
+    end else begin
+        $display("[TB TCA] @ t=%0t - Success!", $time);
+        $display("[TB TCA] @ t=%0t - errors=%08x", $time, errors);
+    end
+    $finish;
+endtask
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) cycle_counter <= '0;
     else cycle_counter <= cycle_counter + 1;
 
     if ((data_addr == MMADDR_EXIT) && data_req) begin
-      if (data_we) errors <= data_wdata;
+      if (data_we)  endSimulation(data_wdata); 
       else mmio_rdata <= cycle_counter;
     end
     if ((data_addr == MMADDR_PRINT) && (data_we & data_req)) begin
@@ -301,20 +310,6 @@ module tb_redmule_verilator (
     end
   end
 
-  int errors = -1;
-  initial begin
-    test_mode = 1'b0;
-
-    do @(posedge clk_i); while (~core_sleep || errors == -1);
-
-    $display("[TB LCA] - errors=%08x", errors);
-    if (errors != 0) begin
-      $error("[TB LCA] - Fail!");
-    end else begin
-      $display("[TB LCA] - Success!");
-    end
-    $finish;
-
-  end
-
+  
+  
 endmodule  // tb_redmule_verilator

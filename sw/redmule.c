@@ -48,8 +48,8 @@ int main() {
   int offload_id_tmp, offload_id;
 
   // Enable RedMulE
-  unsigned int startTicks;
-  START_TIMING(startTicks);
+  
+  START_TIMING(REDMULE_LCA);
 
   hwpe_cg_enable();
 
@@ -68,7 +68,7 @@ int main() {
   asm volatile("wfi" ::: "memory");
 
   // At the end of accelerator's computation, we resume and check on results
-  END_TIMING(startTicks, "REDMULE");
+  END_TIMING(REDMULE_LCA);
   printf("Resumed!\n");
 
   // Disable RedMulE

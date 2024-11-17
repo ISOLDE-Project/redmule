@@ -35,30 +35,39 @@ module tb_redmule_complex_verilator
 
   int          fh; //filehandle
   //
-  /*
+  /* see cv32e40p/bsp/link.ld
 MEMORY
 {
-    instrram    : ORIGIN = 0x1c000000, LENGTH = 0x08000
-    dataram     : ORIGIN = 0x1c010000, LENGTH = 0x30000
-    stack       : ORIGIN = 0x1c040000, LENGTH = 0x30000
+    instrram    : ORIGIN = 0x00100000, LENGTH = 0x8000
+    dataram     : ORIGIN = 0x00110000, LENGTH = 0x30000
+    stack       : ORIGIN = 0x00140000, LENGTH = 0x30000
 }
 */
-  localparam logic [31:0] IMEM_ADDR = 32'h1c000000;
+  localparam logic [31:0] IMEM_ADDR = 32'h00100000;
   localparam int unsigned IMEM_SIZE = 32'h08000;
-  localparam logic [31:0] DMEM_ADDR = 32'h1c010000;
+  localparam logic [31:0] DMEM_ADDR = 32'h00110000;
   localparam int unsigned DMEM_SIZE = 32'h30000;
-  localparam logic [31:0] SMEM_ADDR = 32'h1c040000;
+  localparam logic [31:0] SMEM_ADDR = 32'h00140000;
   localparam int unsigned SMEM_SIZE = 32'h30000;
   localparam int unsigned GMEM_SIZE = SMEM_ADDR + SMEM_SIZE - IMEM_ADDR;
+  //  see reset vector in cv32e40p/bsp/crt0.S
+  localparam logic [31:0] BOOT_ADDR = 32'h00100080;
+    //see cv32e40p/bsp/simple_system_regs.h
+  localparam logic [31:0] MMIO_ADDR = 32'h80000000;
+  localparam logic [31:0] MMADDR_EXIT = MMIO_ADDR + 32'h0;
+  localparam logic [31:0] MMADDR_PRINT = MMIO_ADDR + 32'h4;
+
   // global signals
   string stim_instr, stim_data;
   logic test_mode;
-  logic [31:0] core_boot_addr;
+    logic [  31:0]       cycle_counter;
+  logic                mmio_rvalid;
+  logic [  31:0]       mmio_rdata;
   logic redmule_busy;
 
-  hwpe_stream_intf_tcdm instr[0:0] (.clk(clk_i));
+  //hwpe_stream_intf_tcdm instr[0:0] (.clk(clk_i));
   hwpe_stream_intf_tcdm stack[0:0] (.clk(clk_i));
-  hwpe_stream_intf_tcdm tcdm[MP:0] (.clk(clk_i));
+  hwpe_stream_intf_tcdm tcdm[MP+1:0] (.clk(clk_i));
 
   logic [NC-1:0][ 1:0] evt;
 
@@ -146,14 +155,14 @@ MEMORY
   end
 
   always_comb begin : bind_instrs
-    instr[0].req = core_inst_req.req;
-    instr[0].add = core_inst_req.addr;
-    instr[0].wen = 1'b1;
-    instr[0].be = '0;
-    instr[0].data = '0;
-    core_inst_rsp.gnt = instr[0].gnt;
-    core_inst_rsp.valid = instr[0].r_valid;
-    core_inst_rsp.data = instr[0].r_data;
+    tcdm[MP+1].req = core_inst_req.req;
+    tcdm[MP+1].add = core_inst_req.addr;
+    tcdm[MP+1].wen = 1'b1;
+    tcdm[MP+1].be = '0;
+    tcdm[MP+1].data = '0;
+    core_inst_rsp.gnt = tcdm[MP+1].gnt;
+    core_inst_rsp.valid = tcdm[MP+1].r_valid;
+    core_inst_rsp.data = tcdm[MP+1].r_data;
   end
 
   always_comb begin : bind_stack
@@ -165,10 +174,10 @@ MEMORY
     stack[0].data = core_data_req.data;
   end
 
-  logic other_r_valid;
+  
   always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (~rst_ni) other_r_valid <= '0;
-    else other_r_valid <= core_data_req.req & (core_data_req.addr[31:24] == 8'h80);
+    if (~rst_ni) mmio_rvalid <= '0;
+    else mmio_rvalid <= core_data_req.req & (core_data_req.addr >= MMIO_ADDR);
   end
 
   for (genvar ii = 0; ii < MP; ii++) begin : tcdm_binding
@@ -202,8 +211,9 @@ MEMORY
 
   assign core_data_rsp.data = periph_r_valid   ? periph_r_data    :
                               stack[0].r_valid ? stack[0].r_data  :
-                                                 tcdm[MP].r_valid ? tcdm[MP].r_data : '0;
-  assign core_data_rsp.valid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | other_r_valid;
+                                                 tcdm[MP].r_valid ? tcdm[MP].r_data : 
+                                                                    mmio_rvalid ? mmio_rdata: '0;
+  assign core_data_rsp.valid = periph_r_valid | stack[0].r_valid | tcdm[MP].r_valid | mmio_rvalid;
 
   // tb_dummy_memory  #(
   //   .MP             ( MP + 1        ),
@@ -231,7 +241,7 @@ MEMORY
       .clk_i   (clk_i),
       .rst_ni  (rst_ni),
       .enable_i(1'b1),
-      .tcdm    (tcdm)
+      .tcdm    (tcdm[MP:0])
   );
 
 
@@ -243,7 +253,7 @@ MEMORY
       .clk_i   (clk_i),
       .rst_ni  (rst_ni),
       .enable_i(1'b1),
-      .tcdm    (instr)
+      .tcdm    (tcdm[MP+1:MP+1])
   );
 
   tb_tcdm_verilator #(
@@ -274,7 +284,7 @@ MEMORY
       .rst_ni         (rst_ni),
       .test_mode_i    (test_mode),
       .fetch_enable_i (fetch_enable_i),
-      .boot_addr_i    (core_boot_addr),
+      .boot_addr_i    (BOOT_ADDR),
       .irq_i          ('0),
       .irq_id_o       (),
       .irq_ack_o      (),
@@ -389,22 +399,37 @@ task dump_core_sleep_unit();
   //   end
   // end
 
-  integer f_x, f_W, f_y, f_tau;
-  logic start;
-
-  int   errors = -1;
-  always_ff @(posedge clk_i) begin
-    if((core_data_req.addr == 32'h80000000 ) &&
-       (core_data_req.we & core_data_req.req == 1'b1)) begin
-      errors = core_data_req.data;
+// Declare the task with an input parameter for errors
+task endSimulation(input int errors);
+    if (errors != 0) begin
+        $display("[TB TCA] @ t=%0t - Fail!", $time);
+        $error("[TB TCA] @ t=%0t - errors=%08x", $time, errors);
+    end else begin
+        $display("[TB TCA] @ t=%0t - Success!", $time);
+        $display("[TB TCA] @ t=%0t - errors=%08x", $time, errors);
     end
-    if((core_data_req.addr == 32'h80000004 ) &&
-       (core_data_req.we & core_data_req.req == 1'b1)) begin
-      $write("%c", core_data_req.data);
+    $finish;
+endtask
+
+// Use the task with core_data_req.data
+always_ff @(posedge clk_i) begin
+    if (~rst_ni) cycle_counter <= '0;
+    else cycle_counter <= cycle_counter + 1;
+
+    if ((core_data_req.addr == MMADDR_EXIT) && core_data_req.req ) begin
+        if (core_data_req.we ) 
+           endSimulation(core_data_req.data); 
+        else
+           mmio_rdata <= cycle_counter;
+    end
+    if ((core_data_req.addr == MMADDR_PRINT) &&
+        (core_data_req.we & core_data_req.req )) begin
+        $write("%c", core_data_req.data);
     end
     dump_ctrl_fsm();
     dump_core_sleep_unit();
-  end
+end
+
 
   initial begin
     integer id;
@@ -428,43 +453,7 @@ task dump_core_sleep_unit();
     end
 
     test_mode = 1'b0;
-    core_boot_addr = 32'h1C000084;
 
-
-
-
-    // End: WFI + returned != -1 signals end-of-computation
-    while (~core_sleep || errors == -1) @(posedge clk_i);
-    // cnt_rd = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[0] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[1] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[2] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[3] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[4] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[5] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[6] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[7] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_rd[8];
-
-    // cnt_wr = tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[0] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[1] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[2] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[3] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[4] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[5] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[6] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[7] +
-    //          tb_redmule_complex_verilator.i_dummy_dmemory.cnt_wr[8];
-
-    // $display("[TB TCA] - cnt_rd=%-8d", cnt_rd);
-    // $display("[TB TCA] - cnt_wr=%-8d", cnt_wr);
-    if (errors != 0) begin
-      $display("[TB TCA] - Fail!");
-      $error("[TB TCA] - errors=%08x", errors);
-    end else begin
-      $display("[TB TCA] - Success!");
-      $display("[TB TCA] - errors=%08x", errors);
-    end
-    $finish;
   end
 
   // close output file for writing
