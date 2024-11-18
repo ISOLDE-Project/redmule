@@ -49,20 +49,17 @@ Resumed!
 [TB LCA] @ t=9348 - errors=00000000
 ```
 **TCA**  
-
-
+Apparently there is a bug in Verilator, which prevents the correct execution of cv32e40x_controller_fsm.sv module.
+A patch is provinded as a work arround, how to apply the patch, see [patch/cv32e40x-b02547e8c1b6e597/ReadMe.md](patch/cv32e40x-b02547e8c1b6e597/ReadMe.md)
+```sh
+make REDMULE_COMPLEX=1 veri-clean verilate sw-clean sim-inputs run-test2
+```
 Output similar to:    
 ```
-[TESTBENCH] @ t=0: loading firmware /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/redmule-m.hex
-Timing for REDMULE: 233 cycles
-Resumed!
-Terminated test with 0 errors. See you!
-[TB] - errors=00000000
-[TB] - Success!
-- /ubuntu_20.04/home/ext/tristan-project/redmule/tb/tb_redmule_verilator.sv:316: Verilog $finish
-mv verilator_tb.vcd /ubuntu_20.04/home/ext/tristan-project/redmule/log/tb_redmule_verilator/
-rm /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/redmule.elf
-
+Timing for REDMULE_TCA: 226 cycles
+[APP TCA] Terminated test with 0 errors. See you!
+[TB TCA] @ t=12102 - Success!
+[TB TCA] @ t=12102 - errors=00000000
 ```
 ## build sw
 get a clean slate
