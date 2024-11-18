@@ -288,11 +288,11 @@ module tb_redmule_verilator (
 
 task endSimulation(input int errors);
     if (errors != 0) begin
-        $display("[TB TCA] @ t=%0t - Fail!", $time);
-        $error("[TB TCA] @ t=%0t - errors=%08x", $time, errors);
+        $display("[TB LCA] @ t=%0t - Fail!", $time);
+        $error("[TB LCA] @ t=%0t - errors=%08x", $time, errors);
     end else begin
-        $display("[TB TCA] @ t=%0t - Success!", $time);
-        $display("[TB TCA] @ t=%0t - errors=%08x", $time, errors);
+        $display("[TB LCA] @ t=%0t - Success!", $time);
+        $display("[TB LCA] @ t=%0t - errors=%08x", $time, errors);
     end
     $finish;
 endtask

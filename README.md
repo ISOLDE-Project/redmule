@@ -26,13 +26,30 @@ make REDMULE_COMPLEX=1  run-test
  make REDMULE_COMPLEX=1  veri-clean verilate sw-clean sw-build run-test
 ```
 ### build simulation and run the test program
+**LCA**   
 ```sh
-make  veri-clean verilate  hw-clean  clean-test-programs sim-inputs run-test
+ make veri-clean verilate sw-clean sim-inputs veri-run
 ```
-### build and run the test program
-```sh
-make  hw-clean  clean-test-programs sim-inputs run-test
+Output should be similar to this:
 ```
+* Running with Verilator: /home/uic52463/hdd1/tristan-project/redmule/bin/tb_redmule_verilator/verilator_executable 
+*               log file: /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/redmule.log
+*             *.vcd file: /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/redmule.vcd
+
+mkdir -p /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator
+rm -f /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/verilator_tb.vcd
+/home/uic52463/hdd1/tristan-project/redmule/bin/tb_redmule_verilator/verilator_executable  \
+         \
+        "+firmware=/home/uic52463/hdd1/tristan-project/redmule/vsim/redmule-m.hex" \
+        | tee /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/redmule.log
+[TESTBENCH] @ t=0: loading firmware /home/uic52463/hdd1/tristan-project/redmule/vsim/redmule-m.hex
+Timing for REDMULE_LCA: 233 cycles
+Resumed!
+[TB LCA] @ t=9348 - Success!
+[TB LCA] @ t=9348 - errors=00000000
+```
+**TCA**  
+
 
 Output similar to:    
 ```
