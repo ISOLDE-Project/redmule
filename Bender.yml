@@ -50,6 +50,7 @@ sources:
       files:
         - rtl/redmule_inst_decoder.sv
         - rtl/redmule_complex.sv
+        - rtl/redmule_isolde.sv
         - rtl/redmule_complex_wrap.sv
 
     - target: any(redmule_test_complex, redmule_test_hwpe)
