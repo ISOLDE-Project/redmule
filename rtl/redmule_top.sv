@@ -33,10 +33,10 @@ module redmule_top
   output logic                    busy_o     ,
   output logic [N_CORES-1:0][1:0] evt_o      ,
 `ifdef TARGET_REDMULE_COMPLEX
-  cv32e40x_if_xif.coproc_issue    xif_issue_if_i,
-  cv32e40x_if_xif.coproc_result   xif_result_if_o,
-  cv32e40x_if_xif.coproc_compressed xif_compressed_if_i,
-  cv32e40x_if_xif.coproc_mem        xif_mem_if_o,
+  isolde_cv_x_if.coproc_issue    xif_issue_if_i,
+  isolde_cv_x_if.coproc_result   xif_result_if_o,
+  isolde_cv_x_if.coproc_compressed xif_compressed_if_i,
+  isolde_cv_x_if.coproc_mem        xif_mem_if_o,
 `elsif TARGET_REDMULE_HWPE
   // Periph slave port for the controller side
   hwpe_ctrl_intf_periph.slave periph,

@@ -32,7 +32,7 @@ module redmule_isolde
     // evnets
     output logic                [N_CORES-1:0][1:0] evt_o,
            hci_core_intf.master                    tcdm,
-           cv32e40x_if_xif                         core_xif
+           isolde_cv_x_if                         core_xif
 );
 
   localparam int unsigned SysDataWidth = 32;
