@@ -105,10 +105,6 @@ int main() {
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
   asm volatile("addi t2, %0, 0" ::"r"(y_addr));
-  //asm volatile("addi t3, %0, 0" ::"r"(cfg_reg0));
-  //asm volatile("addi t4, %0, 0" ::"r"(cfg_reg1));
-
-
 
     asm volatile(".word (0x4       << 25) | \
               (0b00111  << 20) | \
@@ -120,8 +116,21 @@ int main() {
                 ".word 0x00000010\n"
                 ".word 0x0000000c\n"
                 ".word 0x00000010\n"
-                ".word 0x386284ab\n"
-  );
+    );
+/** REDMULE operation */
+  // asm volatile(".word 0x0   | \         
+  //             (0b0       << 14) | \     /* Custom format enable/disable */
+  //             (0b0       << 13) | \     /* Widening enable/disable */
+  //             (0b001     << 10) | \     /* Operation selection */
+  //             (0b001     <<  7)    \n"  /* Data format */
+  //         );
+
+  asm volatile(".word 0x0   | \
+              (0b0       << 14) | \
+              (0b0       << 13) | \
+              (0b001     << 10) | \
+              (0b001     <<  7)    \n"
+          );
 
     // Wait for end of computation
   asm volatile("wfi" ::: "memory");
