@@ -118,9 +118,9 @@ module redmule_inst_decoder
             clk_en = 1'b1 | clear_i;
             if (xif_issue_if_i.issue_req.imm32_valid && xif_issue_if_i.issue_req.rs_valid) begin
               //  M size
-              cfg_reg_d[3][SizeLarge-1:0] = xif_issue_if_i.issue_req.imm32[0][SizeLarge-1:0];
+              cfg_reg_d[3][SizeLarge-1:0] = xif_issue_if_i.issue_req.imm32[1][SizeLarge-1:0];
               //  K size
-              cfg_reg_d[3][SysDataWidth-1:SizeLarge] = xif_issue_if_i.issue_req.imm32[1][SizeLarge-1:0];
+              cfg_reg_d[3][SysDataWidth-1:SizeLarge] = xif_issue_if_i.issue_req.imm32[0][SizeLarge-1:0];
               //  N size
               cfg_reg_d[4] = xif_issue_if_i.issue_req.imm32[2];
               // Arithmetic instruction

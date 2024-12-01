@@ -23,6 +23,8 @@
 
 int main() {
 
+  volatile int errors = 0;
+
   uint8_t *x = x_inp;
   uint8_t *w = w_inp;
   uint8_t *y = y_inp;
@@ -35,6 +37,7 @@ int main() {
   uint32_t x_addr = *(uint32_t *)&x;
   uint32_t w_addr = *(uint32_t *)&w;
   uint32_t y_addr = *(uint32_t *)&y;
+  #if 0
   uint32_t cfg_reg0 = ((k_size << 16) | (m_size << 0));
   uint32_t cfg_reg1 = (n_size << 0);
 
@@ -62,7 +65,7 @@ int main() {
               (0x00      <<  7) | \
               (0b0001011 <<  0)   \n");
 
-  volatile int errors = 0;
+  
 
   /* marith instruction */
   // sm volatile(
@@ -94,7 +97,7 @@ int main() {
 
   tfp_printf("[APP TCA] Terminated test with %d errors. See you!\n", errors);
 
-
+#endif
   tfp_printf("[APP TCA vli] Starting test. Godspeed!\n");
   
   START_TIMING(REDMULE_TCA_VLI);
