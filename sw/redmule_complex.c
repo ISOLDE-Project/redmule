@@ -94,6 +94,39 @@ int main() {
 
   tfp_printf("[APP TCA] Terminated test with %d errors. See you!\n", errors);
 
+
+  tfp_printf("[APP TCA vli] Starting test. Godspeed!\n");
+  
+  START_TIMING(REDMULE_TCA_VLI);
+
+  asm volatile("addi t0, %0, 0" ::"r"(x_addr));
+  asm volatile("addi t1, %0, 0" ::"r"(w_addr));
+  asm volatile("addi t2, %0, 0" ::"r"(y_addr));
+  //asm volatile("addi t3, %0, 0" ::"r"(cfg_reg0));
+  //asm volatile("addi t4, %0, 0" ::"r"(cfg_reg1));
+
+
+
+    asm volatile(".word (0x4       << 25) | \
+              (0b00111  << 20) | \
+              (0b00110   << 15) | \
+              (0b101   << 12) | \
+              (0b00101      <<  7) | \
+              (0b1111111 <<  0)   \n"
+//
+                ".word 0x00000010\n"
+                ".word 0x0000000c\n"
+                ".word 0x00000010\n"
+                ".word 0x386284ab\n"
+  );
+
+    // Wait for end of computation
+  asm volatile("wfi" ::: "memory");
+  END_TIMING(REDMULE_TCA_VLI);
+  
+  errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
+
+  tfp_printf("[APP TCA vli] Terminated test with %d errors. See you!\n", errors); 
 #ifndef USE_BSP
   *(int *)0x80000000 = errors;
 #endif
