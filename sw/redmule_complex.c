@@ -109,7 +109,7 @@ int main() {
     asm volatile(".word (0x4       << 25) | \
               (0b00111  << 20) | \
               (0b00110   << 15) | \
-              (0b101   << 12) | \
+              (0b011   << 12) | \
               (0b00101      <<  7) | \
               (0b1111111 <<  0)   \n"
 //
@@ -125,12 +125,12 @@ int main() {
   //             (0b001     <<  7)    \n"  /* Data format */
   //         );
 
-  asm volatile(".word 0x0   | \
-              (0b0       << 14) | \
-              (0b0       << 13) | \
-              (0b001     << 10) | \
-              (0b001     <<  7)    \n"
-          );
+  // asm volatile(".word 0x0   | \
+  //             (0b0       << 14) | \
+  //             (0b0       << 13) | \
+  //             (0b001     << 10) | \
+  //             (0b001     <<  7)    \n"
+  //         );
 
     // Wait for end of computation
   asm volatile("wfi" ::: "memory");
