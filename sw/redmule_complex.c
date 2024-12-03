@@ -1,3 +1,4 @@
+// Copyleft 2024 ISOLDE
 // Copyright 2023 ETH Zurich and University of Bologna.
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
@@ -23,7 +24,7 @@
 
 int main() {
 
-  volatile int errors = 0;
+  volatile int errors = -1;
 
   uint8_t *x = x_inp;
   uint8_t *w = w_inp;
@@ -37,11 +38,11 @@ int main() {
   uint32_t x_addr = *(uint32_t *)&x;
   uint32_t w_addr = *(uint32_t *)&w;
   uint32_t y_addr = *(uint32_t *)&y;
-  #if 0
+  #ifdef CUSTOM_32B
   uint32_t cfg_reg0 = ((k_size << 16) | (m_size << 0));
   uint32_t cfg_reg1 = (n_size << 0);
 
-  tfp_printf("[APP TCA] Starting test. Godspeed!\n");
+  tfp_printf("[APP TCA custom-32b] Starting test. Godspeed!\n");
   
   START_TIMING(REDMULE_TCA);
 
@@ -95,10 +96,12 @@ int main() {
   
   errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
 
-  tfp_printf("[APP TCA] Terminated test with %d errors. See you!\n", errors);
+  tfp_printf("[APP TCA custom-32b] Terminated test with %d errors. See you!\n", errors);
 
 #endif
-  tfp_printf("[APP TCA vli] Starting test. Godspeed!\n");
+
+#ifdef CUSTOM_128B
+  tfp_printf("[APP TCA custom-128b] Starting test. Godspeed!\n");
   
   START_TIMING(REDMULE_TCA_VLI);
 
@@ -138,7 +141,10 @@ int main() {
   
   errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
 
-  tfp_printf("[APP TCA vli] Terminated test with %d errors. See you!\n", errors); 
+  tfp_printf("[APP TCA custom-128b] Terminated test with %d errors. See you!\n", errors); 
+#endif //CUSTOM_128B
+
+
 #ifndef USE_BSP
   *(int *)0x80000000 = errors;
 #endif
