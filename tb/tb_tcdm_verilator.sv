@@ -1,4 +1,4 @@
-// Copyleft
+// Copyleft 2024 ISOLDE
 // Solderpad Hardware License, Version 0.51, see LICENSE for details.
 // SPDX-License-Identifier: SHL-0.51
 //
@@ -23,6 +23,9 @@ module tb_tcdm_verilator #(
   logic [MP-1:0]       tcdm_r_valid_d;
   logic [MP-1:0][ 1:0] misalignment;
   logic [  31:0]       index          [     MP-1:0];
+
+  int cnt_wr=0;
+  int cnt_rd=0;
 
   // Generate block for each memory port
   generate
@@ -63,7 +66,7 @@ module tb_tcdm_verilator #(
           tcdm_r_valid_d[i] <= '0;
         end else begin
           if (tcdm[i].req & ~tcdm[i].wen) begin  // Write
-
+            cnt_wr+=1;
             memory[index[i]]   <= write_data[i][7:0];
             memory[index[i]+1] <= write_data[i][15:8];
             memory[index[i]+2] <= write_data[i][23:16];
@@ -73,7 +76,7 @@ module tb_tcdm_verilator #(
             tcdm_r_valid_d[i]  <= 1'b1;
           end else begin
             if (tcdm[i].req & tcdm[i].wen) begin  // Read
-
+              cnt_rd+=1;
               tcdm_r_data_d[i][7:0] <= memory[index[i]];
               tcdm_r_data_d[i][15:8] <= memory[index[i]+1];
               tcdm_r_data_d[i][23:16] <= memory[index[i]+2];
