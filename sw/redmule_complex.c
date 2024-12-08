@@ -140,8 +140,13 @@ int main() {
     // Wait for end of computation
   asm volatile("wfi" ::: "memory");
    (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
-  END_TIMING(REDMULE_TCA_VLI);
   
+
+  END_TIMING(REDMULE_TCA_VLI);
+  int perfcnt_id =  *(volatile int *) MMADDR_PERF_COUNTERS;
+  int perfcnt_cycles =  *(volatile int *) (MMADDR_PERF_COUNTERS+4);
+  tfp_printf("[APP TCA custom-128b] Terminated test  %d in %d cycles\n",perfcnt_id,perfcnt_cycles);
+
   errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
 
   tfp_printf("[APP TCA custom-128b] Terminated test with %d errors. See you!\n", errors); 
