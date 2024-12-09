@@ -42,9 +42,9 @@ int main() {
   uint32_t cfg_reg0 = ((k_size << 16) | (m_size << 0));
   uint32_t cfg_reg1 = (n_size << 0);
 
-  //tfp_printf("[APP TCA custom-32b] Starting test. Godspeed!\n");
+  tfp_printf("[APP TCA custom-32b] Starting test. Godspeed!\n");
   
-  START_TIMING(REDMULE_TCA);
+ // START_TIMING(REDMULE_TCA);
  (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
@@ -92,20 +92,22 @@ int main() {
 
   // Wait for end of computation
   asm volatile("wfi" ::: "memory");
-  (*(int *) 0x80000008) = (int)0x3;
-  END_TIMING(REDMULE_TCA);
- 
+  (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
+  //END_TIMING(REDMULE_TCA);
+   int perfcnt_id =  *(volatile int *) MMADDR_PERF_COUNTERS;
+  int perfcnt_cycles =  *(volatile int *) (MMADDR_PERF_COUNTERS+4);
+  tfp_printf("[APP TCA custom-32b] Terminated test  %d in %d cycles\n",perfcnt_id,perfcnt_cycles);
   
   errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
 
-  //tfp_printf("[APP TCA custom-32b] Terminated test with %d errors. See you!\n", errors);
+  tfp_printf("[APP TCA custom-32b] Terminated test with %d errors. See you!\n", errors);
 
 #endif
 
 #ifdef CUSTOM_128B
   tfp_printf("[APP TCA custom-128b] Starting test. Godspeed!\n");
   
-  START_TIMING(REDMULE_TCA_VLI);
+  //START_TIMING(REDMULE_TCA_VLI);
  (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
@@ -142,7 +144,7 @@ int main() {
    (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
   
 
-  END_TIMING(REDMULE_TCA_VLI);
+  //END_TIMING(REDMULE_TCA_VLI);
   int perfcnt_id =  *(volatile int *) MMADDR_PERF_COUNTERS;
   int perfcnt_cycles =  *(volatile int *) (MMADDR_PERF_COUNTERS+4);
   tfp_printf("[APP TCA custom-128b] Terminated test  %d in %d cycles\n",perfcnt_id,perfcnt_cycles);
