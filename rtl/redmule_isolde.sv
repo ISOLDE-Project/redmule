@@ -31,8 +31,13 @@ module redmule_isolde
     input  logic                                   fetch_enable_i,
     // evnets
     output logic                [N_CORES-1:0][1:0] evt_o,
+
            hci_core_intf.master                    tcdm,
+`ifdef TARGET_REDMULE_COMPLEX           
            isolde_cv_x_if                         core_xif
+ `elsif TARGET_REDMULE_HWPE
+     hwpe_ctrl_intf_periph.slave periph
+`endif
 );
 
   localparam int unsigned SysDataWidth = 32;
@@ -70,10 +75,14 @@ module redmule_isolde
       .evt_o              (evt_o),
       .busy_o             (busy),
       .tcdm               (tcdm),
+`ifdef TARGET_REDMULE_COMPLEX      
       .xif_issue_if_i     (core_xif.coproc_issue),
       .xif_result_if_o    (core_xif.coproc_result),
       .xif_compressed_if_i(core_xif.coproc_compressed),
       .xif_mem_if_o       (core_xif.coproc_mem)
+ `elsif TARGET_REDMULE_HWPE
+      .periph(periph)
+`endif      
   );
 
 endmodule : redmule_isolde

@@ -44,7 +44,7 @@ sources:
 
     - target: redmule_hwpe
       files:
-        - rtl/redmule_wrap.sv
+        - rtl/redmule_isolde.sv
 
     - target: redmule_complex
       files:
