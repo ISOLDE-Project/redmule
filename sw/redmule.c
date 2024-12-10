@@ -26,60 +26,48 @@
 
 int main() {
 
-  uint16_t m_size = M_SIZE;
-  uint16_t n_size = N_SIZE;
-  uint16_t k_size = K_SIZE;
 
   uint8_t *x = x_inp;
   uint8_t *w = w_inp;
   uint8_t *y = y_inp;
-  uint8_t *z = z_oup; // golden_out //1c010000
-
-  uint8_t float_fmt = (SRC_FMT == FP8)       ? (uint8_t)Float8
-                      : (SRC_FMT == FP8ALT)  ? (uint8_t)Float8Alt
-                      : (SRC_FMT == FP16)    ? (uint8_t)Float16
-                      : (SRC_FMT == FP16ALT) ? (uint8_t)Float16Alt
-                                             : (uint8_t)Float16;
-
-  volatile int errors = 0;
-  int gold_sum = 0, check_sum = 0;
-  int i, j;
-
-  int offload_id_tmp, offload_id;
-
-  // Enable RedMulE
   
-  START_TIMING(REDMULE_LCA);
+  volatile int errors = 0;
 
-  hwpe_cg_enable();
 
-  hwpe_soft_clear();
+ (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
 
-  while ((offload_id_tmp = hwpe_acquire_job()) < 0)
-    ;
-
-  redmule_cfg((unsigned int)x, (unsigned int)w, (unsigned int)y, m_size, n_size, k_size,
-              (uint8_t)gemm_ops, float_fmt);
-
-  // Start RedMulE operation and sleeping until the end of computation
-  //printf("Triggering accelerator and going to sleep...\n");
-  hwpe_trigger_job();
+  const uint32_t cfg_reg0 = ((K_SIZE << 16) | (M_SIZE << 0));
+  const uint32_t cfg_reg1 = (N_SIZE << 0);
+  const uint32_t arith_reg = (GEMM << 10) | (1 << 7);
+  //START_TIMING(REDMULE_LCA);
+ 
+  HWPE_WRITE((unsigned int)x, REDMULE_REG_OFFS + REDMULE_REG_X_PTR);
+  HWPE_WRITE((unsigned int)w, REDMULE_REG_OFFS + REDMULE_REG_W_PTR);
+  HWPE_WRITE((unsigned int)y, REDMULE_REG_OFFS + REDMULE_REG_Z_PTR);
+  //
+  HWPE_WRITE(cfg_reg0, REDMULE_REG_OFFS + REDMULE_MCFG0_PTR);
+  HWPE_WRITE(cfg_reg1, REDMULE_REG_OFFS + REDMULE_MCFG1_PTR);
+  //
+  HWPE_WRITE(arith_reg, REDMULE_REG_OFFS + REDMULE_ARITH_PTR);
+  //trigger job();
+  HWPE_WRITE(0, REDMULE_TRIGGER);
 
   asm volatile("wfi" ::: "memory");
 
-  // At the end of accelerator's computation, we resume and check on results
-  END_TIMING(REDMULE_LCA);
-  printf("Resumed!\n");
+   (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
+    int perfcnt_id =  *(volatile int *) MMADDR_PERF_COUNTERS;
+    int perfcnt_cycles =  *(volatile int *) (MMADDR_PERF_COUNTERS+4);
+    tfp_printf("[APP LCA ] Terminated test  %d in %d cycles\n",perfcnt_id,perfcnt_cycles);
+  //END_TIMING(REDMULE_LCA);
 
-  // Disable RedMulE
-  hwpe_cg_disable();
 
-  if (float_fmt == Float16 || float_fmt == Float16Alt)
-    errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
-  else if (float_fmt == Float8 || float_fmt == Float8Alt)
-    errors = redmule8_compare_int(y, golden, m_size * k_size / 4);
 
+    errors = redmule16_compare_int(y, golden, M_SIZE * K_SIZE / 2);
+
+#ifndef USE_BSP
   *(int *)MMADDR_EXIT = errors;
+#endif
+  
 
   printf("[LCA] Terminated test with %d errors. See you!\n", errors);
 
