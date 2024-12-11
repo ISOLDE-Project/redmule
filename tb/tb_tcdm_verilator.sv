@@ -4,9 +4,10 @@
 //
 
 module tb_tcdm_verilator #(
-    parameter MP          = 1,
-    parameter MEMORY_SIZE = 1024,
-    parameter BASE_ADDR   = 0
+    parameter MP = 1,  // Number of memory ports (default 1)
+    parameter MEMORY_SIZE = 1024,  // Size of the memory (default 1024 entries)
+    parameter BASE_ADDR = 0,  // Base address for memory access (default 0)
+    parameter RD_DELAY_CYCLES = 0  // Number of clock cycles to delay for read operations (default 2)
 
 ) (
     input logic                       clk_i,
@@ -15,17 +16,21 @@ module tb_tcdm_verilator #(
           hwpe_stream_intf_tcdm.slave tcdm    [MP-1:0]
 );
 
-  logic [   7:0]       memory         [MEMORY_SIZE];
+  logic [   7:0]       memory                                                  [MEMORY_SIZE];
 
   logic [MP-1:0][31:0] write_data;
 
   logic [MP-1:0][31:0] tcdm_r_data_d;
   logic [MP-1:0]       tcdm_r_valid_d;
   logic [MP-1:0][ 1:0] misalignment;
-  logic [  31:0]       index          [     MP-1:0];
+  logic [  31:0]       index                                                   [     MP-1:0];
 
-  int cnt_wr=0;
-  int cnt_rd=0;
+  int                  cnt_wr = 0;
+  int                  cnt_rd = 0;
+
+  // Programmable delay counters for each read port
+  logic [MP-1:0][31:0] rd_delay_counter;  // Delay counter for each memory port
+  logic [MP-1:0] rd_busy;  // Delay counter for each memory port
 
   // Generate block for each memory port
   generate
@@ -62,11 +67,13 @@ module tb_tcdm_verilator #(
       // Always block to process read and write operations
       always_ff @(posedge clk_i or negedge rst_ni) begin
         if (~rst_ni) begin
-          tcdm_r_data_d[i]  <= '0;
+          tcdm_r_data_d[i] <= '0;
           tcdm_r_valid_d[i] <= '0;
+          rd_delay_counter[i] <= RD_DELAY_CYCLES;
+          rd_busy <=0;
         end else begin
           if (tcdm[i].req & ~tcdm[i].wen) begin  // Write
-            cnt_wr+=1;
+            cnt_wr += 1;
             memory[index[i]]   <= write_data[i][7:0];
             memory[index[i]+1] <= write_data[i][15:8];
             memory[index[i]+2] <= write_data[i][23:16];
@@ -76,13 +83,22 @@ module tb_tcdm_verilator #(
             tcdm_r_valid_d[i]  <= 1'b1;
           end else begin
             if (tcdm[i].req & tcdm[i].wen) begin  // Read
-              cnt_rd+=1;
-              tcdm_r_data_d[i][7:0] <= memory[index[i]];
-              tcdm_r_data_d[i][15:8] <= memory[index[i]+1];
+              if(~rd_busy) begin
+                rd_busy<=1;
+              tcdm_r_data_d[i][7:0]   <= memory[index[i]];
+              tcdm_r_data_d[i][15:8]  <= memory[index[i]+1];
               tcdm_r_data_d[i][23:16] <= memory[index[i]+2];
               tcdm_r_data_d[i][31:24] <= memory[index[i]+3];
-
-              tcdm_r_valid_d[i] <= 1'b1;
+              end
+              if (rd_delay_counter[i] == 0) begin
+                tcdm_r_valid_d[i] <= 1'b1;
+                cnt_rd += 1;
+                rd_delay_counter[i] = RD_DELAY_CYCLES;
+                rd_busy<=0;
+              end else begin
+                rd_delay_counter[i] = rd_delay_counter[i] - 1;
+                tcdm_r_valid_d[i] <= 1'b0;
+              end
             end else begin
               tcdm_r_data_d[i]  <= '0;
               tcdm_r_valid_d[i] <= 1'b0;
