@@ -48,7 +48,8 @@ int main() {
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
   asm volatile("addi t2, %0, 0" ::"r"(y_addr));
-
+  asm volatile("redmule.gemm t0,t1,t2,0x10,0xc,0x10");
+#if 0
     asm volatile(".word (0x4       << 25) | \
               (0b00111  << 20) | \
               (0b00110   << 15) | \
@@ -60,6 +61,7 @@ int main() {
                 ".word 0x0000000c\n"
                 ".word 0x00000010\n"
     );
+#endif    
 /** REDMULE operation */
   // asm volatile(".word 0x0   | \         
   //             (0b0       << 14) | \     /* Custom format enable/disable */
