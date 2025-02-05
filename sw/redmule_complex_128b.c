@@ -61,7 +61,7 @@ int main() {
                 ".word 0x0000000c\n"
                 ".word 0x00000010\n"
     );
-#endif    
+ #endif   
 /** REDMULE operation */
   // asm volatile(".word 0x0   | \         
   //             (0b0       << 14) | \     /* Custom format enable/disable */
