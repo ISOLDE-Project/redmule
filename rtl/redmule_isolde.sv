@@ -7,7 +7,7 @@
 //
 
 module redmule_isolde
-  import cv32e40x_pkg::*;
+  //import cv32e40x_pkg::*;
   import fpnew_pkg::*;
   import hci_package::*;
   import redmule_pkg::*;

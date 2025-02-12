@@ -5,7 +5,7 @@
 # Yvan Tortorella <yvan.tortorella@unibo.it>
 #
 
-common_targs += -t cv32e40p_exclude_tracer
+#common_targs += -t cv32e40p_exlude_tracer
 
 ifeq ($(REDMULE_COMPLEX),1)
 	common_targs += -t redmule_complex

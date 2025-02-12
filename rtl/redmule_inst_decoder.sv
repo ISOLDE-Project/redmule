@@ -7,7 +7,7 @@
 
 module redmule_inst_decoder
   import redmule_pkg::*;
-  import cv32e40x_pkg::*;
+  //import cv32e40x_pkg::*;
 #(
     parameter  int unsigned SysInstWidth  = 32,
     parameter  int unsigned SysDataWidth  = 32,
