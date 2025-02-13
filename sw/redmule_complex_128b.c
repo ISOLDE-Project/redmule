@@ -38,73 +38,9 @@ int main() {
   uint32_t x_addr = *(uint32_t *)&x;
   uint32_t w_addr = *(uint32_t *)&w;
   uint32_t y_addr = *(uint32_t *)&y;
-  #ifdef CUSTOM_32B
-  uint32_t cfg_reg0 = ((k_size << 16) | (m_size << 0));
-  uint32_t cfg_reg1 = (n_size << 0);
 
-  tfp_printf("[APP TCA custom-32b] Starting test. Godspeed!\n");
-  
- // START_TIMING(REDMULE_TCA);
- (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
-  asm volatile("addi t0, %0, 0" ::"r"(x_addr));
-  asm volatile("addi t1, %0, 0" ::"r"(w_addr));
-  asm volatile("addi t2, %0, 0" ::"r"(y_addr));
-  asm volatile("addi t3, %0, 0" ::"r"(cfg_reg0));
-  asm volatile("addi t4, %0, 0" ::"r"(cfg_reg1));
 
-  /* mcnfig instruction */
-  // asm volatile(
-  //      ".word (0x0       << 25) | \     /* Empty */
-  //             (0b11101   << 20) | \     /* Rs2 */
-  //             (0b11100   << 15) | \     /* Rs1 */
-  //             (0x00      <<  7) | \     /* Empty */
-  //             (0b0001011 <<  0)   \n"); /* OpCode */
 
-  asm volatile(".word (0x0       << 25) | \
-              (0b11101   << 20) | \
-              (0b11100   << 15) | \
-              (0x00      <<  7) | \
-              (0b0001011 <<  0)   \n");
-
-  
-
-  /* marith instruction */
-  // sm volatile(
-  //     ".word (0b00111   << 27) | \     /* Rs3 */
-  //            (0b00      << 25) | \     /* Empty*/
-  //            (0b00110   << 20) | \     /* Rs2 */
-  //            (0b00101   << 15) | \     /* Rs1 */
-  //            (0b0       << 14) | \     /* Custom format enable/disable */
-  //            (0b0       << 13) | \     /* Widening enable/disable */
-  //            (0b001     << 10) | \     /* Operation selection */
-  //            (0b001     <<  7) | \     /* Data format */
-  //            (0b0101011 <<  0)   \n"); /* OpCode */
-
-  asm volatile(".word (0b00111   << 27) | \
-              (0b00      << 25) | \
-              (0b00110   << 20) | \
-              (0b00101   << 15) | \
-              (0b0       << 14) | \
-              (0b0       << 13) | \
-              (0b001     << 10) | \
-              (0b001     <<  7) | \
-              (0b0101011 <<  0)   \n");
-
-  // Wait for end of computation
-  asm volatile("wfi" ::: "memory");
-  (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
-  //END_TIMING(REDMULE_TCA);
-   int perfcnt_id =  *(volatile int *) MMADDR_PERF_COUNTERS;
-  int perfcnt_cycles =  *(volatile int *) (MMADDR_PERF_COUNTERS+4);
-  tfp_printf("[APP TCA custom-32b] Terminated test  %d in %d cycles\n",perfcnt_id,perfcnt_cycles);
-  
-  errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
-
-  tfp_printf("[APP TCA custom-32b] Terminated test with %d errors. See you!\n", errors);
-
-#endif
-
-#ifdef CUSTOM_128B
   tfp_printf("[APP TCA custom-128b] Starting test. Godspeed!\n");
   
   //START_TIMING(REDMULE_TCA_VLI);
@@ -112,7 +48,8 @@ int main() {
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
   asm volatile("addi t2, %0, 0" ::"r"(y_addr));
-
+  asm volatile("redmule.gemm t0,t1,t2,0x10,0xc,0x10");
+#if 0
     asm volatile(".word (0x4       << 25) | \
               (0b00111  << 20) | \
               (0b00110   << 15) | \
@@ -124,6 +61,7 @@ int main() {
                 ".word 0x0000000c\n"
                 ".word 0x00000010\n"
     );
+ #endif   
 /** REDMULE operation */
   // asm volatile(".word 0x0   | \         
   //             (0b0       << 14) | \     /* Custom format enable/disable */
@@ -152,7 +90,7 @@ int main() {
   errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
 
   tfp_printf("[APP TCA custom-128b] Terminated test with %d errors. See you!\n", errors); 
-#endif //CUSTOM_128B
+
 
 
 #ifndef USE_BSP

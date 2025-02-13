@@ -19,7 +19,7 @@ ARCH           ?= rv
 XLEN           ?= 32
 XTEN           ?= imc_zicsr
 
-
+export REDMULE_COMPLEX 
 ifeq ($(REDMULE_COMPLEX),1)
 	TEST_SRCS := $(SW)/redmule_complex.c
 else
@@ -71,19 +71,24 @@ STIM_INSTR=$(VSIM_DIR)/stim_instr.txt
 STIM_DATA=$(VSIM_DIR)/stim_data.txt
 
 # Build implicit rules
-$(STIM_INSTR) $(STIM_DATA): $(BIN)
+$(STIM_INSTR) $(STIM_DATA) $(BIN).hex: $(BIN)
 	objcopy --srec-len 1 --output-target=srec $(BIN) $(BIN).s19
 	scripts/parse_s19.pl $(BIN).s19 > $(BIN).txt 2>$(BUILD_DIR)/parse_s19.pl.log
 	python scripts/s19tomem.py $(BIN).txt $(STIM_INSTR) $(STIM_DATA) 
+	$(RISCV_EXE_PREFIX)objcopy -O verilog \
+		$(BIN) \
+		$(VSIM_DIR)/verif.hex
+	python $(SCRIPTS_DIR)/addr_offset.py  $(VSIM_DIR)/verif.hex  $(VSIM_DIR)/verif-m.hex 0x1c000000
+	python $(SCRIPTS_DIR)/addr_offset.py  $(VSIM_DIR)/verif.hex  $(VSIM_DIR)/verif-d.hex 0x1c000000
 
 $(BIN): $(CRT) $(OBJ)
 	$(RV_LD) $(RV_LD_OPTS) -o $(BIN) $(CRT) $(OBJ) -T$(LINKSCRIPT)
-
+	
 $(CRT): $(BUILD_DIR)
-	$(RV_CC) $(CC_OPTS) -c $(BOOTSCRIPT) -o $(CRT)
+	$(RV_CC) $(RV_CC_OPTS) -c $(BOOTSCRIPT) -o $(CRT)
 
 $(OBJ): $(TEST_SRCS)
-	$(RV_CC) $(CC_OPTS) -c $(TEST_SRCS) $(FLAGS) $(INC) -o $(OBJ)
+	$(RV_CC) $(RV_CC_OPTS) -DTINYPRINTF_DEFINE_TFP_PRINTF -c $(TEST_SRCS) $(FLAGS) $(INC) -o $(OBJ)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -153,6 +158,7 @@ synth-ips:
 
 sw-clean:
 	rm -rf $(BUILD_DIR)
+	rm -rf $(VSIM_DIR)
 	@rm -vf $(STIM_INSTR)
 	@rm -vf $(STIM_DATA)
 

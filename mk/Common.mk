@@ -106,6 +106,7 @@ RISCV_CFLAGS += -DUSE_BSP
 		$< \
 		$@
 	python $(SCRIPTS_DIR)/addr_offset.py  $@  $*-m.hex 0x00100000
+	python $(SCRIPTS_DIR)/addr_offset.py  $@  $*-d.hex 0x00100000
 	$(RISCV_EXE_PREFIX)readelf -a $< > $*.readelf
 	$(RISCV_EXE_PREFIX)objdump \
 		-fhSD \

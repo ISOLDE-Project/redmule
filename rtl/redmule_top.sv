@@ -12,20 +12,20 @@ module redmule_top
   import hwpe_ctrl_package::*;
   import hwpe_stream_package::*;
 #(
-  parameter  int unsigned  ID_WIDTH           = 8                 ,
-  parameter  int unsigned  N_CORES            = 8                 ,
-  parameter  int unsigned  DW                 = DATA_W            , // TCDM port dimension (in bits)
-  parameter  int unsigned  UW                 = 1                 ,
-  parameter  int unsigned  X_EXT              = 0                 ,
-  parameter  int unsigned  SysInstWidth       = 32                ,
-  parameter  int unsigned  SysDataWidth       = 32                ,
-  localparam int unsigned  NumContext         = N_CONTEXT         , // Number of sequential jobs for the slave device
-  localparam fp_format_e   FpFormat           = FPFORMAT          , // Data format (default is FP16)
-  localparam int unsigned  Height             = ARRAY_HEIGHT      , // Number of PEs within a row
-  localparam int unsigned  Width              = ARRAY_WIDTH       , // Number of parallel rows
-  localparam int unsigned  NumPipeRegs        = PIPE_REGS         , // Number of pipeline registers within each PE
-  localparam pipe_config_t PipeConfig         = DISTRIBUTED       ,
-  localparam int unsigned  BITW               = fp_width(FpFormat)  // Number of bits for the given format
+  parameter int unsigned  ID_WIDTH           = 8                 ,
+  parameter int unsigned  N_CORES            = 8                 ,
+  parameter int unsigned  DW                 = DATA_W            , // TCDM port dimension (in bits)
+  parameter int unsigned  UW                 = 1                 ,
+  parameter int unsigned  X_EXT              = 0                 ,
+  parameter int unsigned  SysInstWidth       = 32                ,
+  parameter int unsigned  SysDataWidth       = 32                ,
+  parameter int unsigned  NumContext         = N_CONTEXT         , // Number of sequential jobs for the slave device
+  parameter fp_format_e   FpFormat           = FPFORMAT          , // Data format (default is FP16)
+  parameter int unsigned  Height             = ARRAY_HEIGHT      , // Number of PEs within a row
+  parameter int unsigned  Width              = ARRAY_WIDTH       , // Number of parallel rows
+  parameter int unsigned  NumPipeRegs        = PIPE_REGS         , // Number of pipeline registers within each PE
+  parameter pipe_config_t PipeConfig         = DISTRIBUTED       ,
+  parameter int unsigned  BITW               = fp_width(FpFormat)  // Number of bits for the given format
 )(
   input  logic                    clk_i      ,
   input  logic                    rst_ni     ,
@@ -33,10 +33,10 @@ module redmule_top
   output logic                    busy_o     ,
   output logic [N_CORES-1:0][1:0] evt_o      ,
 `ifdef TARGET_REDMULE_COMPLEX
-  cv32e40x_if_xif.coproc_issue    xif_issue_if_i,
-  cv32e40x_if_xif.coproc_result   xif_result_if_o,
-  cv32e40x_if_xif.coproc_compressed xif_compressed_if_i,
-  cv32e40x_if_xif.coproc_mem        xif_mem_if_o,
+  isolde_cv_x_if.coproc_issue    xif_issue_if_i,
+  isolde_cv_x_if.coproc_result   xif_result_if_o,
+  isolde_cv_x_if.coproc_compressed xif_compressed_if_i,
+  isolde_cv_x_if.coproc_mem        xif_mem_if_o,
 `elsif TARGET_REDMULE_HWPE
   // Periph slave port for the controller side
   hwpe_ctrl_intf_periph.slave periph,

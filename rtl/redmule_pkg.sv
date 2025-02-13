@@ -11,40 +11,40 @@ import hwpe_stream_package::*;
 
 package redmule_pkg;
 
-  parameter int unsigned            DATA_W       = 288; // TCDM port dimension (in bits)
-  parameter int unsigned            MemDw        = 32;
-  parameter int unsigned            NumByte      = MemDw/8;
-  parameter int unsigned            ADDR_W       = hci_package::DEFAULT_AW;
-  parameter int unsigned            DATAW        = DATA_W - MemDw;
-  parameter int unsigned            REDMULE_REGS = 18;
-  parameter int unsigned            N_CONTEXT    = 2;
-  parameter fpnew_pkg::fp_format_e  FPFORMAT     = fpnew_pkg::FP16;
-  parameter int unsigned            BITW         = fpnew_pkg::fp_width(FPFORMAT);
-  parameter int unsigned            ARRAY_HEIGHT = 4;
-  parameter int unsigned            PIPE_REGS    = 3;
+  parameter int unsigned DATA_W = 288;  // TCDM port dimension (in bits)
+  parameter int unsigned MemDw = 32;
+  parameter int unsigned NumByte = MemDw / 8;
+  parameter int unsigned ADDR_W = hci_package::DEFAULT_AW;
+  parameter int unsigned DATAW = DATA_W - MemDw;
+  parameter int unsigned REDMULE_REGS = 18;
+  parameter int unsigned N_CONTEXT = 2;
+  parameter fpnew_pkg::fp_format_e FPFORMAT = fpnew_pkg::FP16;
+  parameter int unsigned BITW = fpnew_pkg::fp_width(FPFORMAT);
+  parameter int unsigned ARRAY_HEIGHT = 4;
+  parameter int unsigned PIPE_REGS = 3;
   parameter int unsigned            ARRAY_WIDTH  = ARRAY_HEIGHT*PIPE_REGS; // Superior limit, smaller values are allowed.
-  parameter int unsigned            TOT_DEPTH    = DATAW/BITW;
-  parameter int unsigned            DEPTH        = TOT_DEPTH/ARRAY_HEIGHT;
-  parameter int unsigned            STRB         = DATA_W/8;
-  parameter fpnew_pkg::fmt_logic_t  FpFmtConfig  = 6'b001101;
+  parameter int unsigned TOT_DEPTH = DATAW / BITW;
+  parameter int unsigned DEPTH = TOT_DEPTH / ARRAY_HEIGHT;
+  parameter int unsigned STRB = DATA_W / 8;
+  parameter fpnew_pkg::fmt_logic_t FpFmtConfig = 6'b001101;
   parameter fpnew_pkg::ifmt_logic_t IntFmtConfig = 4'b1000;
-  parameter fpnew_pkg::operation_e  CAST_OP      = fpnew_pkg::F2F;
-  parameter int unsigned MIN_FMT  = fpnew_pkg::min_fp_width(FpFmtConfig);
-  parameter int unsigned DW_CUT   = DATA_W - ARRAY_HEIGHT*(PIPE_REGS + 1)*MIN_FMT;
+  parameter fpnew_pkg::operation_e CAST_OP = fpnew_pkg::F2F;
+  parameter int unsigned MIN_FMT = fpnew_pkg::min_fp_width(FpFmtConfig);
+  parameter int unsigned DW_CUT = DATA_W - ARRAY_HEIGHT * (PIPE_REGS + 1) * MIN_FMT;
 
   // Register File mapping
   /**********************
   ** Slave RF indexing **
   **********************/
-  parameter int unsigned X_ADDR = 0; // 0x00 /* These do not change between slave and final */
-  parameter int unsigned W_ADDR = 1; // 0x04 /* These do not change between slave and final */
-  parameter int unsigned Z_ADDR = 2; // 0x08 /* These do not change between slave and final */
-  parameter int unsigned MCFIG0 = 3; // 0x0C --> [31:16] -> K size, [15: 0] -> M size
-  parameter int unsigned MCFIG1 = 4; // 0x10 --> [31: 0] -> N Size
+  parameter int unsigned X_ADDR = 0;  // 0x00 /* These do not change between slave and final */
+  parameter int unsigned W_ADDR = 1;  // 0x04 /* These do not change between slave and final */
+  parameter int unsigned Z_ADDR = 2;  // 0x08 /* These do not change between slave and final */
+  parameter int unsigned MCFIG0 = 3;  // 0x0C --> [31:16] -> K size, [15: 0] -> M size
+  parameter int unsigned MCFIG1 = 4;  // 0x10 --> [31: 0] -> N Size
   // Matrix arithmetic config register
   // [12:10] -> Operation selection
   // [ 9: 7] -> Input/Output format
-  parameter int unsigned MACFG = 5; // 0x14
+  parameter int unsigned MACFG = 5;  // 0x14
   /**********************
   ** Final RF indexing **
   **********************/
@@ -57,22 +57,22 @@ package redmule_pkg;
   // [23:16] -> X COLUMNS LEFTOVERS
   // [15:8]  -> W ROWS LEFTOVERS
   // [7:0]   -> W/Y COLUMNS LEFTOVERS
-  parameter int unsigned LEFTOVERS = 5; // 0x14
+  parameter int unsigned LEFTOVERS = 5;  // 0x14
   // We keep a register for the remaining params
   // [31:16] -> TOT_NUMBER_OF_STORES
   // [14]    -> 1'b0: X cols/W rows >= ARRAY_HEIGHT; 1'b1: X cols/W rows < ARRAY_HEIGHT
   // [13]    -> 1'b0: W cols >= TILE ( TILE = (PIPE_REGS + 1)*ARRAY_HEIGHT ); 1'b1: W cols < TILE ( TILE = (PIPE_REGS + 1)*ARRAY_HEIGHT )
   parameter int unsigned LEFT_PARAMS = 6;  // 0x18
   parameter int unsigned X_D1_STRIDE = 7;  // 0x1C
-  parameter int unsigned W_TOT_LEN   = 8;  // 0x20
-  parameter int unsigned TOT_X_READ  = 9;  // 0x24
-  parameter int unsigned W_D0_STRIDE = 10; // 0x20
-  parameter int unsigned Z_TOT_LEN   = 11; // 0x2C
-  parameter int unsigned Z_D0_STRIDE = 12; // 0x30
-  parameter int unsigned Z_D2_STRIDE = 13; // 0x34
-  parameter int unsigned X_ROWS_OFFS = 14; // 0x38
-  parameter int unsigned X_SLOTS     = 15; // 0x3C
-  parameter int unsigned IN_TOT_LEN  = 16; // 0x40
+  parameter int unsigned W_TOT_LEN = 8;  // 0x20
+  parameter int unsigned TOT_X_READ = 9;  // 0x24
+  parameter int unsigned W_D0_STRIDE = 10;  // 0x20
+  parameter int unsigned Z_TOT_LEN = 11;  // 0x2C
+  parameter int unsigned Z_D0_STRIDE = 12;  // 0x30
+  parameter int unsigned Z_D2_STRIDE = 13;  // 0x34
+  parameter int unsigned X_ROWS_OFFS = 14;  // 0x38
+  parameter int unsigned X_SLOTS = 15;  // 0x3C
+  parameter int unsigned IN_TOT_LEN = 16;  // 0x40
   // One resgister is used for the round modes and operations of the Computing Elements.
   // [31:29] -> roundmode of the stage 1
   // [28:26] -> roundmode of the stage 2
@@ -81,18 +81,20 @@ package redmule_pkg;
   // [15:13] -> input/output format
   // [12:10] -> computing format
   // [0:0]   -> GEMM selection
-  parameter int unsigned OP_SELECTION = 17; // 0x44
+  parameter int unsigned OP_SELECTION = 17;  // 0x44
 
-  parameter bit[6:0] MCNFIG = 7'b0001011; // 0x0B
-  parameter bit[6:0] MARITH = 7'b0101011; // 0x2B
-  parameter bit[6:0] RVCSR  = 7'b1110011; // 0x73 -> RISC-V CSR instruction opcode
+  parameter bit [6:0] MCNFIG = 7'b0001011;  // 0x0B
+  parameter bit [6:0] MARITH = 7'b0101011;  // 0x2B
+  parameter bit [6:0] RVCSR =  7'b1110011;  // 0x73 -> RISC-V CSR instruction opcode
+  localparam bit [6:0] ISOLDE = 7'b1111111;  // 0x73 -> RISC-V CSR instruction opcode
+  localparam bit [6:0] ISOLDE_GEMM = 7'h4;  // 0x73 -> RISC-V CSR instruction opcode
 
   /* The CSRs below are not really present in the current RedMulE version. The following
      enum is here to allow future development where it might be useful to write the
      configuration registers through standard `csrw` instructions coming from the core.
      The CSRs values are chosen following the custom read/write already available in the
      RISC-V specifications. */
-  typedef enum logic[11:0] {
+  typedef enum logic [11:0] {
     CSR_REDMULE_X_ADDR = 12'h800,
     CSR_REDMULE_W_ADDR = 12'h801,
     CSR_REDMULE_Z_ADDR = 12'h802,
@@ -101,13 +103,19 @@ package redmule_pkg;
     CSR_REDMULE_MACFG  = 12'h805
   } redmule_csr_num_e;
 
-  parameter int unsigned NumStreamSources = 3; // X, W, Y
-  parameter int unsigned XsourceStreamId  = 0;
-  parameter int unsigned WsourceStreamId  = 1;
-  parameter int unsigned YsourceStreamId  = 2;
+  parameter int unsigned NumStreamSources = 3;  // X, W, Y
+  parameter int unsigned XsourceStreamId = 0;
+  parameter int unsigned WsourceStreamId = 1;
+  parameter int unsigned YsourceStreamId = 2;
 
-  typedef enum logic { LD_IN_FMP, LD_WEIGHT } source_sel_e;
-  typedef enum logic { LOAD, STORE }          ld_st_sel_e;
+  typedef enum logic {
+    LD_IN_FMP,
+    LD_WEIGHT
+  } source_sel_e;
+  typedef enum logic {
+    LOAD,
+    STORE
+  } ld_st_sel_e;
 
   typedef struct packed {
     hci_package::hci_streamer_ctrl_t x_stream_source_ctrl;
@@ -128,10 +136,10 @@ package redmule_pkg;
   } flgs_streamer_t;
 
   typedef struct packed {
-    logic d_shift;
-    logic h_shift;
-    logic blck_shift;
-    logic load;
+    logic                         d_shift;
+    logic                         h_shift;
+    logic                         blck_shift;
+    logic                         load;
     logic [$clog2(TOT_DEPTH):0]   cols_lftovr;
     logic [$clog2(ARRAY_WIDTH):0] rows_lftovr;
     logic [$clog2(DEPTH)-1:0]     slots;
@@ -149,9 +157,7 @@ package redmule_pkg;
     logic [$clog2(ARRAY_HEIGHT):0] rows_lftovr;
   } w_buffer_ctrl_t;
 
-  typedef struct packed {
-    logic [ARRAY_HEIGHT-1:0] empty;
-  } w_buffer_flgs_t;
+  typedef struct packed {logic [ARRAY_HEIGHT-1:0] empty;} w_buffer_flgs_t;
 
   typedef struct packed {
     logic                         buffer_clk_en;
@@ -173,27 +179,27 @@ package redmule_pkg;
   } z_buffer_flgs_t;
 
   typedef struct packed {
-    logic                   [2:0] fma_is_boxed;
-    logic                   [1:0] noncomp_is_boxed;
-    fpnew_pkg::roundmode_e        stage1_rnd;
-    fpnew_pkg::roundmode_e        stage2_rnd;
-    fpnew_pkg::operation_e        op1;
-    fpnew_pkg::operation_e        op2;
-    logic                         op_mod;
-    logic                         in_valid;
-    logic                         flush;
-    logic                         out_ready;
-    logic       [ARRAY_WIDTH-1:0] row_clk_gate_en;
+    logic [2:0]             fma_is_boxed;
+    logic [1:0]             noncomp_is_boxed;
+    fpnew_pkg::roundmode_e  stage1_rnd;
+    fpnew_pkg::roundmode_e  stage2_rnd;
+    fpnew_pkg::operation_e  op1;
+    fpnew_pkg::operation_e  op2;
+    logic                   op_mod;
+    logic                   in_valid;
+    logic                   flush;
+    logic                   out_ready;
+    logic [ARRAY_WIDTH-1:0] row_clk_gate_en;
   } cntrl_engine_t;
 
   typedef struct packed {
-    logic                  [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0] in_ready;
-    fpnew_pkg::status_t    [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0] status;
-    logic                  [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0] extension_bit;
+    logic [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0]                  in_ready;
+    fpnew_pkg::status_t [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0]    status;
+    logic [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0]                  extension_bit;
     fpnew_pkg::classmask_e [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0] class_mask;
     logic [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0]                  is_mask;
-    logic                  [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0] out_valid;
-    logic                  [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0] busy;
+    logic [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0]                  out_valid;
+    logic [ARRAY_WIDTH-1:0][ARRAY_HEIGHT-1:0]                  busy;
   } flgs_engine_t;
 
   typedef struct packed {
@@ -219,11 +225,38 @@ package redmule_pkg;
     logic [STRB-1:0] z_strb;
   } flgs_scheduler_t;
 
-  typedef enum logic [2:0] { MATMUL=3'h0, GEMM=3'h1, ADDMAX=3'h2, ADDMIN=3'h3, MULMAX=3'h4, MULMIN=3'h5, MAXMIN=3'h6, MINMAX=3'h7 } gemm_op_e;
-  typedef enum logic [1:0] { Float8=2'h0, Float16=2'h1, Float8Alt=2'h2, Float16Alt=2'h3 } gemm_fmt_e;
-  typedef enum logic       { RNE=1'h0, RTZ=1'h1 } rnd_mode_e;
-  typedef enum logic [2:0] { FPU_FMADD=3'h0, FPU_ADD=3'h2, FPU_MUL=3'h3, FPU_MINMAX=3'h7 }    fpu_op_e;
-  typedef enum logic [2:0] { FPU_FP16=3'h2, FPU_FP8=3'h3, FPU_FP16ALT=3'h4, FPU_FP8ALT=3'h5 } fpu_fmt_e;
+  typedef enum logic [2:0] {
+    MATMUL = 3'h0,
+    GEMM   = 3'h1,
+    ADDMAX = 3'h2,
+    ADDMIN = 3'h3,
+    MULMAX = 3'h4,
+    MULMIN = 3'h5,
+    MAXMIN = 3'h6,
+    MINMAX = 3'h7
+  } gemm_op_e;
+  typedef enum logic [1:0] {
+    Float8 = 2'h0,
+    Float16 = 2'h1,
+    Float8Alt = 2'h2,
+    Float16Alt = 2'h3
+  } gemm_fmt_e;
+  typedef enum logic {
+    RNE = 1'h0,
+    RTZ = 1'h1
+  } rnd_mode_e;
+  typedef enum logic [2:0] {
+    FPU_FMADD = 3'h0,
+    FPU_ADD = 3'h2,
+    FPU_MUL = 3'h3,
+    FPU_MINMAX = 3'h7
+  } fpu_op_e;
+  typedef enum logic [2:0] {
+    FPU_FP16 = 3'h2,
+    FPU_FP8 = 3'h3,
+    FPU_FP16ALT = 3'h4,
+    FPU_FP8ALT = 3'h5
+  } fpu_fmt_e;
 
   typedef struct packed {
     logic [31:0] x_addr;
@@ -240,10 +273,10 @@ package redmule_pkg;
     logic [15:0] x_rows_iter;
     logic [15:0] w_cols_iter;
     logic [15:0] w_rows_iter;
-    logic [ 7:0] x_cols_lftovr;
-    logic [ 7:0] x_rows_lftovr;
-    logic [ 7:0] w_cols_lftovr;
-    logic [ 7:0] w_rows_lftovr;
+    logic [7:0]  x_cols_lftovr;
+    logic [7:0]  x_rows_lftovr;
+    logic [7:0]  w_cols_lftovr;
+    logic [7:0]  w_rows_lftovr;
     logic [15:0] tot_stores;
     logic [31:0] x_d1_stride;
     logic [31:0] w_tot_len;
@@ -255,19 +288,19 @@ package redmule_pkg;
     logic [31:0] x_rows_offs;
     logic [31:0] x_buffer_slots;
     logic [31:0] x_tot_len;
-    rnd_mode_e stage_1_rnd_mode;
-    rnd_mode_e stage_2_rnd_mode;
-    fpu_op_e stage_1_op;
-    fpu_op_e stage_2_op;
-    fpu_fmt_e input_format;
-    fpu_fmt_e computing_format;
+    rnd_mode_e   stage_1_rnd_mode;
+    rnd_mode_e   stage_2_rnd_mode;
+    fpu_op_e     stage_1_op;
+    fpu_op_e     stage_2_op;
+    fpu_fmt_e    input_format;
+    fpu_fmt_e    computing_format;
     logic        gemm_selection;
   } redmule_config_t;
 
   typedef enum {
-    CV32P ,
-    CV32X ,
-    Ibex  ,
+    CV32P,
+    CV32X,
+    Ibex,
     CVA6
   } core_type_e;
 
@@ -302,7 +335,7 @@ package redmule_pkg;
     logic req;
     logic wen;
     logic [DATA_W/8-1:0] be;
-    logic signed [DATA_W/32-1:0][31:0]boffs;
+    logic signed [DATA_W/32-1:0][31:0] boffs;
     logic [31:0] add;
     logic [DATA_W-1:0] data;
     logic lrdy;

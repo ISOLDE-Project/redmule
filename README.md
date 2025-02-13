@@ -18,28 +18,48 @@ make verilate
 ```sh
 make veri-clean
 ```
-
+### REDMULE_COMPLEX
+```
+make REDMULE_COMPLEX=1  run-test
+```
+```
+ make REDMULE_COMPLEX=1  veri-clean verilate sw-clean sw-build run-test
+```
 ### build simulation and run the test program
+**LCA**   
 ```sh
-make  veri-clean verilate  hw-clean  clean-test-programs sim-inputs run-test
+ make veri-clean verilate sw-clean sim-inputs veri-run
 ```
-### build and run the test program
-```sh
-make  hw-clean  clean-test-programs sim-inputs run-test
+Output should be similar to this:
 ```
+* Running with Verilator: /home/uic52463/hdd1/tristan-project/redmule/bin/tb_redmule_verilator/verilator_executable 
+*               log file: /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/redmule.log
+*             *.vcd file: /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/redmule.vcd
 
+mkdir -p /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator
+rm -f /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/verilator_tb.vcd
+/home/uic52463/hdd1/tristan-project/redmule/bin/tb_redmule_verilator/verilator_executable  \
+         \
+        "+firmware=/home/uic52463/hdd1/tristan-project/redmule/vsim/redmule-m.hex" \
+        | tee /home/uic52463/hdd1/tristan-project/redmule/log/tb_redmule_verilator/redmule.log
+[TESTBENCH] @ t=0: loading firmware /home/uic52463/hdd1/tristan-project/redmule/vsim/redmule-m.hex
+Timing for REDMULE_LCA: 233 cycles
+Resumed!
+[TB LCA] @ t=9348 - Success!
+[TB LCA] @ t=9348 - errors=00000000
+```
+**TCA**  
+Apparently there is a bug in Verilator, which prevents the correct execution of cv32e40x_controller_fsm.sv module.
+A patch is provinded as a work arround, how to apply the patch, see [patch/cv32e40x-b02547e8c1b6e597/ReadMe.md](patch/cv32e40x-b02547e8c1b6e597/ReadMe.md)
+```sh
+make REDMULE_COMPLEX=1 veri-clean verilate sw-clean sim-inputs run-test2
+```
 Output similar to:    
 ```
-[TESTBENCH] @ t=0: loading firmware /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/redmule-m.hex
-Timing for REDMULE: 233 cycles
-Resumed!
-Terminated test with 0 errors. See you!
-[TB] - errors=00000000
-[TB] - Success!
-- /ubuntu_20.04/home/ext/tristan-project/redmule/tb/tb_redmule_verilator.sv:316: Verilog $finish
-mv verilator_tb.vcd /ubuntu_20.04/home/ext/tristan-project/redmule/log/tb_redmule_verilator/
-rm /ubuntu_20.04/home/ext/tristan-project/redmule/vsim/redmule.elf
-
+Timing for REDMULE_TCA: 226 cycles
+[APP TCA] Terminated test with 0 errors. See you!
+[TB TCA] @ t=12102 - Success!
+[TB TCA] @ t=12102 - errors=00000000
 ```
 ## build sw
 get a clean slate
