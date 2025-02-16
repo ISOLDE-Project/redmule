@@ -34,13 +34,15 @@ int main() {
   volatile int errors = 0;
 
 
- (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
+
 
   const uint32_t cfg_reg0 = ((K_SIZE << 16) | (M_SIZE << 0));
   const uint32_t cfg_reg1 = (N_SIZE << 0);
   const uint32_t arith_reg = (GEMM << 10) | (1 << 7);
   //START_TIMING(REDMULE_LCA);
- 
+
+  tfp_printf("[APP LCA ] Starting test. Godspeed!\n");
+  START_PERFCNT(0x1)
   HWPE_WRITE((unsigned int)x, REDMULE_REG_OFFS + REDMULE_REG_X_PTR);
   HWPE_WRITE((unsigned int)w, REDMULE_REG_OFFS + REDMULE_REG_W_PTR);
   HWPE_WRITE((unsigned int)y, REDMULE_REG_OFFS + REDMULE_REG_Z_PTR);
@@ -51,26 +53,22 @@ int main() {
   HWPE_WRITE(arith_reg, REDMULE_REG_OFFS + REDMULE_ARITH_PTR);
   //trigger job();
   HWPE_WRITE(0, REDMULE_TRIGGER);
-
+  STOP_PERFCNT(0x1)
+  START_PERFCNT(0x2)
+    // Wait for end of computation
   asm volatile("wfi" ::: "memory");
-
-   (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
-    int perfcnt_id =  *(volatile int *) MMADDR_PERF_COUNTERS;
-    int perfcnt_cycles =  *(volatile int *) (MMADDR_PERF_COUNTERS+4);
-    tfp_printf("[APP LCA ] Terminated test  %d in %d cycles\n",perfcnt_id,perfcnt_cycles);
-  //END_TIMING(REDMULE_LCA);
-
-
-
+  STOP_PERFCNT(0x2)
+  printPerfCnt();
+    
     errors = redmule16_compare_int(y, golden, M_SIZE * K_SIZE / 2);
+
+    printf("[LCA] Terminated test with %d errors. See you!\n", errors);
+
+
 
 #ifndef USE_BSP
   *(int *)MMADDR_EXIT = errors;
 #endif
-  
-
-  printf("[LCA] Terminated test with %d errors. See you!\n", errors);
-
 
   return errors;
 }

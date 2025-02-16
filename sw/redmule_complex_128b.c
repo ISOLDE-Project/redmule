@@ -43,12 +43,12 @@ int main() {
 
   tfp_printf("[APP TCA custom-128b] Starting test. Godspeed!\n");
   
-  //START_TIMING(REDMULE_TCA_VLI);
- (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
+  START_PERFCNT(0x1)
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
   asm volatile("addi t2, %0, 0" ::"r"(y_addr));
   asm volatile("redmule.gemm t0,t1,t2,0x10,0xc,0x10");
+ // (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
 #if 0
     asm volatile(".word (0x4       << 25) | \
               (0b00111  << 20) | \
@@ -77,15 +77,10 @@ int main() {
   //             (0b001     <<  7)    \n"
   //         );
 
-    // Wait for end of computation
+  STOP_PERFCNT(0x1)
+  // Wait for end of computation
   asm volatile("wfi" ::: "memory");
-   (*(volatile int *) MMADDR_PERF_COUNTERS) =(int) 0x1;
-  
-
-  //END_TIMING(REDMULE_TCA_VLI);
-  int perfcnt_id =  *(volatile int *) MMADDR_PERF_COUNTERS;
-  int perfcnt_cycles =  *(volatile int *) (MMADDR_PERF_COUNTERS+4);
-  tfp_printf("[APP TCA custom-128b] Terminated test  %d in %d cycles\n",perfcnt_id,perfcnt_cycles);
+  printPerfCnt();
 
   errors = redmule16_compare_int(y, golden, m_size * k_size / 2);
 
@@ -94,7 +89,7 @@ int main() {
 
 
 #ifndef USE_BSP
-  *(int *)0x80000000 = errors;
+  *(int *)MMADDR_EXIT = errors;
 #endif
 
   return errors;
