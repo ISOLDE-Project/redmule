@@ -7,7 +7,7 @@
 
 module redmule_inst_decoder
   import redmule_pkg::*;
-  //import cv32e40x_pkg::*;
+//import cv32e40x_pkg::*;
 #(
     parameter  int unsigned SysInstWidth  = 32,
     parameter  int unsigned SysDataWidth  = 32,
@@ -65,7 +65,7 @@ module redmule_inst_decoder
   );
 
   assign op_code = xif_issue_if_i.issue_req.instr[OpCodeWidth-1:0];
-  assign funct7 = xif_issue_if_i.issue_req.instr[31:25];
+  assign funct7 =  xif_issue_if_i.issue_req.instr[31:25];
 
   assign xif_result_if_o.result_valid = (xif_result_if_o.result_ready) ? 1'b1 : 1'b0;
   assign xif_result_if_o.result = '0;
@@ -124,7 +124,7 @@ module redmule_inst_decoder
               //  N size
               cfg_reg_d[4] = xif_issue_if_i.issue_req.imm32[2];
               // Arithmetic instruction
-              cfg_reg_d[5] = 32'h00000480;//xif_issue_if_i.issue_req.imm32[3];  
+              cfg_reg_d[5] = 32'h00000480;  //xif_issue_if_i.issue_req.imm32[3];  
               //
               cfg_reg_d[0] = xif_issue_if_i.issue_req.rs[0];  // Rs1 contains X start pointer
               cfg_reg_d[1] = xif_issue_if_i.issue_req.rs[1];  // Rs2 contains W start pointer
