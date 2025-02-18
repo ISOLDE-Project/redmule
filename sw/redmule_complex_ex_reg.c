@@ -44,7 +44,7 @@ int main() {
   tfp_printf("[APP TCA exchange register file] Starting test. Godspeed!\n");
   
   START_PERFCNT(0x1)
-  asm volatile("vle32.q Q0, 0x10,0xc,0x10, 0");
+  asm volatile("ld3xi32 Q0, 0x10,0xc,0x10");
   asm volatile("addi t0, %0, 0" ::"r"(x_addr));
   asm volatile("addi t1, %0, 0" ::"r"(w_addr));
   asm volatile("addi t2, %0, 0" ::"r"(y_addr));
