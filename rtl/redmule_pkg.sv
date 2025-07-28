@@ -13,7 +13,13 @@ package redmule_pkg;
 
   parameter int unsigned DATA_W = 288;  // TCDM port dimension (in bits)
   parameter int unsigned MemDw = 32;
+  
+`ifdef TARGET_SPM
+  parameter int unsigned NumByte = MemDw / 4;
+`else
   parameter int unsigned NumByte = MemDw / 8;
+`endif
+
   parameter int unsigned ADDR_W = hci_package::DEFAULT_AW;
   parameter int unsigned DATAW = DATA_W - MemDw;
   parameter int unsigned REDMULE_REGS = 18;

@@ -216,7 +216,7 @@ always_comb begin : address_gen_signals
     cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.base_addr = reg_file_i.hwpe_params[Z_ADDR];
     cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.tot_len = reg_file_i.hwpe_params[Z_TOT_LEN];
     cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.d0_len = W;
-    cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.d0_stride = 64;//reg_file_i.hwpe_params[Z_D0_STRIDE];
+    cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.d0_stride = reg_file_i.hwpe_params[Z_D0_STRIDE];
     cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.d1_len = reg_file_i.hwpe_params[W_ITERS][15:0];
     cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.d1_stride = JMP;
     cntrl_streamer_o.y_stream_source_ctrl.addressgen_ctrl.d2_stride = reg_file_i.hwpe_params[Z_D2_STRIDE];
