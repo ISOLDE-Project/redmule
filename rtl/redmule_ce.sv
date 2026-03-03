@@ -1,3 +1,4 @@
+// Copyleft 2026 ISOLDE
 // Copyright 2023 ETH Zurich and University of Bologna.
 // Solderpad Hardware License, Version 0.51, see LICENSE for details.
 // SPDX-License-Identifier: SHL-0.51
@@ -108,57 +109,57 @@ fpnew_pkg::roundmode_e       stage1_rnd_int              ;
 fpnew_pkg::roundmode_e       stage2_rnd_int              ;
 fpnew_pkg::operation_e       op2_int                     ;
 
-logic                        stage1_fma_op_mod           ,
-                             stage1_noncomp_op_mod       ;
+logic                        stage1_fma_op_mod           ;
 
-TagType                      stage1_fma_input_tag        ,
-                             stage1_noncomp_input_tag    ;
 
-AuxType                      stage1_fma_input_aux        ,
-                             stage1_noncomp_input_aux    ;
+TagType                      stage1_fma_input_tag        ;
 
-logic                        stage1_fma_in_valid         ,
-                             stage1_noncomp_in_valid     ;
+
+AuxType                      stage1_fma_input_aux        ;
+
+
+logic                        stage1_fma_in_valid         ;
+
 
 logic                        stage1_in_ready             ,
-                             stage1_fma_in_ready         ,
-                             stage1_noncomp_in_ready     ;
+                             stage1_fma_in_ready         ;
 
-logic                        stage1_fma_reg_enable       ,
-                             stage1_noncomp_reg_enable   ;
 
-logic                        stage1_fma_flush            ,
-                             stage1_noncomp_flush        ;
+logic                        stage1_fma_reg_enable       ;
+
+
+logic                        stage1_fma_flush            ;
+
 
 fpnew_pkg::status_t          stage1_status               ,
-                             stage1_fma_status           ,
-                             stage1_noncomp_status       ;
+                             stage1_fma_status           ;
+
 
 logic                        stage1_extension_bit        ,
-                             stage1_fma_extension_bit    ,
-                             stage1_noncomp_extension_bit;
+                             stage1_fma_extension_bit    ;
+
 
 fpnew_pkg::classmask_e       stage1_class_mask           ;
 logic                        stage1_is_class             ;
 
 TagType                      stage1_output_tag           ,
-                             stage1_fma_output_tag       ,
-                             stage1_noncomp_output_tag   ;
+                             stage1_fma_output_tag       ;
+
 
 AuxType                      stage1_output_aux           ,
-                             stage1_fma_output_aux       ,
-                             stage1_noncomp_output_aux   ;
+                             stage1_fma_output_aux       ;
+
 
 logic                        stage1_out_valid            ,
-                             stage1_fma_out_valid        ,
-                             stage1_noncomp_out_valid    ;
+                             stage1_fma_out_valid        ;
 
-logic                        stage1_fma_out_ready        ,
-                             stage1_noncomp_out_ready    ;
+
+logic                        stage1_fma_out_ready        ;
+
 
 logic                        stage1_busy                 ,
-                             stage1_fma_busy             ,
-                             stage1_noncomp_busy         ;
+                             stage1_fma_busy             ;
+
 
 assign fma_is_boxed_int     = fma_is_boxed_i    ;
 assign noncomp_is_boxed_int = noncomp_is_boxed_i;
@@ -170,15 +171,15 @@ assign op2_int              = op2_i             ;
 logic      [BITW-1:0] x_input           ,
                       w_input           ,
                       stage1_res        ,
-                      stage1_fma_res    ,
-                      stage1_noncomp_res;
+                      stage1_fma_res    ;
+//                      stage1_noncomp_res;
 
 logic stage1_fma_clk,
       stage1_fma_clk_en,
-      stage1_noncomp_clk,
-      stage1_noncomp_clk_en;
+      stage1_noncomp_clk;
+
 logic [2:0][BITW-1:0] stage1_fma_operands;           // FMA exists only in stage 1
-logic [1:0][BITW-1:0] stage1_noncomp_operands;
+
 
 assign x_input = x_input_i;
 assign w_input = w_input_i;
@@ -187,16 +188,6 @@ assign w_input = w_input_i;
 /* Assigning input signals to the stage1 FMA and to the stage1 NONCOMP module  */
 /*******************************************************************************/
 
-assign stage1_noncomp_operands[0] = x_input;
-assign stage1_noncomp_operands[1] = w_input;
-
-assign stage1_noncomp_op_mod     = op_mod_i    ;
-assign stage1_noncomp_input_tag  = tag_i       ;
-assign stage1_noncomp_input_aux  = aux_i       ;
-assign stage1_noncomp_in_valid   = in_valid_i  ;
-assign stage1_noncomp_reg_enable = reg_enable_i;
-assign stage1_noncomp_flush      = flush_i     ;
-assign stage1_noncomp_out_ready  = out_ready_i ;
 
 always_comb begin : FMA_input_multiplexer
   if ( op1_int == fpnew_pkg::ADD ) begin
@@ -222,11 +213,7 @@ assign stage1_fma_out_ready  = out_ready_i ;
 /* Depending on op1, we clock gate either FMA or NONCOMP module.               */
 /*******************************************************************************/
 always_comb begin : stage_one_clock_gating_selector
-stage1_fma_clk_en     = 1'b0;
-stage1_noncomp_clk_en = 1'b0;
-  if ( op1_int == fpnew_pkg::MINMAX )
-    stage1_noncomp_clk_en = 1'b1;
-  else
+
     stage1_fma_clk_en     = 1'b1;
 end : stage_one_clock_gating_selector
 
@@ -234,43 +221,6 @@ end : stage_one_clock_gating_selector
 /*******************************************************************************/
 /* Instantiation of stage1 FMA and stage1 NONCOMP                              */
 /*******************************************************************************/
-tc_clk_gating stage1_noncomp_clk_gating (
-  .clk_i      ( clk_i                 ),
-  .en_i       ( stage1_noncomp_clk_en ),
-  .test_en_i  ( '0                    ),
-  .clk_o      ( stage1_noncomp_clk    )
-);
-
-redmule_noncomp #(
-  .FpFormat      ( FpFormat    ),
-  .NumPipeRegs   ( NumPipeRegs ),
-  .PipeConfig    ( PipeConfig  ),
-  .Stallable     ( Stallable   )
-) op1_minmax_i   (
-  .clk_i           ( stage1_noncomp_clk           ),
-  .rst_ni          ( rst_ni                       ),
-  .operands_i      ( stage1_noncomp_operands      ),
-  .is_boxed_i      ( noncomp_is_boxed_int         ),
-  .rnd_mode_i      ( stage1_rnd_int               ),
-  .op_i            ( op1_int                      ),
-  .op_mod_i        ( stage1_noncomp_op_mod        ),
-  .tag_i           ( stage1_noncomp_input_tag     ),
-  .aux_i           ( stage1_noncomp_input_aux     ),
-  .in_valid_i      ( stage1_noncomp_in_valid      ),
-  .in_ready_o      ( stage1_noncomp_in_ready      ),
-  .reg_enable_i    ( stage1_noncomp_reg_enable    ),
-  .flush_i         ( stage1_noncomp_flush         ),
-  .result_o        ( stage1_noncomp_res           ),
-  .status_o        ( stage1_noncomp_status        ),
-  .extension_bit_o ( stage1_noncomp_extension_bit ),
-  .class_mask_o    ( stage1_class_mask            ),
-  .is_class_o      ( stage1_is_class              ),
-  .tag_o           ( stage1_noncomp_output_tag    ),
-  .aux_o           ( stage1_noncomp_output_aux    ),
-  .out_valid_o     ( stage1_noncomp_out_valid     ),
-  .out_ready_i     ( stage1_noncomp_out_ready     ),
-  .busy_o          ( stage1_noncomp_busy          )
-);
 
 
 tc_clk_gating stage1_fma_clk_gating (
@@ -323,17 +273,7 @@ stage1_output_aux    = '0;
 stage1_out_valid     = '0;
 stage1_busy          = '0;
 
-  if (op1_int == fpnew_pkg::MINMAX) begin : minmax_output_selected
-    stage1_in_ready      = stage1_noncomp_in_ready     ;
-    stage1_res           = stage1_noncomp_res          ;
-    stage1_status        = stage1_noncomp_status       ;
-    stage1_extension_bit = stage1_noncomp_extension_bit;
-    stage1_output_tag    = stage1_noncomp_output_tag   ;
-    stage1_output_aux    = stage1_noncomp_output_aux   ;
-    stage1_out_valid     = stage1_noncomp_out_valid    ;
-    stage1_busy          = stage1_noncomp_busy         ;
-
-  end else begin : fma_output_selected
+ begin : fma_output_selected
     stage1_in_ready      = stage1_fma_in_ready     ;
     stage1_res           = stage1_fma_res          ;
     stage1_status        = stage1_fma_status       ;
@@ -358,80 +298,25 @@ end : stage1_output_selector
  * - In all the other cases, propagate stage 1 result to stage 2 NONCOMP input */
 
 // Internal signals for logic binding
-logic                        stage2_noncomp_op_mod       ;
-TagType                      stage2_noncomp_input_tag    ;
-AuxType                      stage2_noncomp_input_aux    ;
-logic                        stage2_noncomp_in_valid     ;
-logic                        stage2_in_ready             ,
-                             stage2_noncomp_in_ready     ;
-logic                        stage2_noncomp_reg_enable   ;
-logic                        stage2_noncomp_flush        ;
-fpnew_pkg::status_t          stage2_status               ,
-                             stage2_noncomp_status       ;
-logic                        stage2_extension_bit        ,
-                             stage2_noncomp_extension_bit;
-fpnew_pkg::classmask_e       stage2_class_mask           ,
-                             stage2_noncomp_class_mask   ;
-logic                        stage2_is_class             ,
-                             stage2_noncomp_is_class     ;
-TagType                      stage2_output_tag           ,
-                             stage2_noncomp_output_tag   ;
-AuxType                      stage2_output_aux           ,
-                             stage2_noncomp_output_aux   ;
-logic                        stage2_out_valid            ,
-                             stage2_noncomp_out_valid    ;
-logic                        stage2_noncomp_out_ready    ;
-logic                        stage2_busy                 ,
-                             stage2_noncomp_busy         ;
 
-assign stage2_noncomp_op_mod     = stage1_noncomp_op_mod    ;
-assign stage2_noncomp_input_tag  = stage1_noncomp_input_tag ;
-assign stage2_noncomp_input_aux  = stage1_noncomp_input_aux ;
-assign stage2_noncomp_in_valid   = stage1_noncomp_in_valid  ;
-assign stage2_noncomp_reg_enable = stage1_noncomp_reg_enable;
-assign stage2_noncomp_flush      = stage1_noncomp_flush     ;
-assign stage2_noncomp_out_ready  = stage1_noncomp_out_ready ;
 
-logic [1:0][BITW-1:0]  stage2_noncomp_operands;
-logic      [BITW-1:0]  stage2_res             ,
-                       stage2_noncomp_res     ;
 
-assign stage2_noncomp_operands[0] = stage1_res;
-assign stage2_noncomp_operands[1] = noncomp_y ;
+logic                        stage2_in_ready             ;
+fpnew_pkg::status_t          stage2_status               ;
+logic                        stage2_extension_bit        ;
+fpnew_pkg::classmask_e       stage2_class_mask           ;
+logic                        stage2_is_class             ;
+TagType                      stage2_output_tag           ;
+AuxType                      stage2_output_aux           ;
+logic                        stage2_out_valid            ;
+logic                        stage2_busy                 ;
+                             
 
-/*******************************************************************************/
-/* Instantiation of stage2 NONCOMP                                             */
-/*******************************************************************************/
-redmule_noncomp #(
-  .FpFormat      ( FpFormat    ),
-  .NumPipeRegs   ( 0           ),
-  .PipeConfig    ( PipeConfig  ),
-  .Stallable     ( Stallable   )
-) op2_minmax_i   (
-  .clk_i                                           ,
-  .rst_ni                                          ,
-  .operands_i      ( stage2_noncomp_operands      ),
-  .is_boxed_i      ( noncomp_is_boxed_int         ),
-  .rnd_mode_i      ( stage2_rnd_int               ),
-  .op_i            ( op2_int                      ),
-  .op_mod_i        ( stage2_noncomp_op_mod        ),
-  .tag_i           ( stage2_noncomp_input_tag     ),
-  .aux_i           ( stage2_noncomp_input_aux     ),
-  .in_valid_i      ( stage2_noncomp_in_valid      ),
-  .in_ready_o      ( stage2_noncomp_in_ready      ),
-  .reg_enable_i    ( stage2_noncomp_reg_enable    ),
-  .flush_i         ( stage2_noncomp_flush         ),
-  .result_o        ( stage2_noncomp_res           ),
-  .status_o        ( stage2_noncomp_status        ),
-  .extension_bit_o ( stage2_noncomp_extension_bit ),
-  .class_mask_o    ( stage2_noncomp_class_mask    ),
-  .is_class_o      ( stage2_noncomp_is_class      ),
-  .tag_o           ( stage2_noncomp_output_tag    ),
-  .aux_o           ( stage2_noncomp_output_aux    ),
-  .out_valid_o     ( stage2_noncomp_out_valid     ),
-  .out_ready_i     ( stage2_noncomp_out_ready     ),
-  .busy_o          ( stage2_noncomp_busy          )
-);
+
+
+logic      [BITW-1:0]  stage2_res             ;
+                      
+
 
 /*******************************************************************************/
 /* Stage 2 mux: selects output signals from the stage1 FMA or the stage2       *
@@ -460,18 +345,6 @@ stage2_busy          = '0;
     stage2_output_aux    = stage1_output_aux   ;
     stage2_out_valid     = stage1_out_valid    ;
     stage2_busy          = stage1_busy         ;
-
-  end else begin : stage2_noncomp_enabled
-    stage2_in_ready      = stage2_noncomp_in_ready     ;
-    stage2_res           = stage2_noncomp_res          ;
-    stage2_status        = stage2_noncomp_status       ;
-    stage2_extension_bit = stage2_noncomp_extension_bit;
-    stage2_class_mask    = stage2_noncomp_class_mask   ;
-    stage2_is_class      = stage2_noncomp_is_class     ;
-    stage2_output_tag    = stage2_noncomp_output_tag   ;
-    stage2_output_aux    = stage2_noncomp_output_aux   ;
-    stage2_out_valid     = stage2_noncomp_out_valid    ;
-    stage2_busy          = stage2_noncomp_busy         ;
 
   end
 end : stage2_output_selector
