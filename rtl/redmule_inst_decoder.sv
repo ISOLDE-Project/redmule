@@ -9,15 +9,15 @@ module redmule_inst_decoder
   import redmule_pkg::*;
 //import cv32e40x_pkg::*;
 #(
-    parameter  int unsigned SysInstWidth  = 32,
+    //parameter  int unsigned SysInstWidth  = 32,
     parameter  int unsigned SysDataWidth  = 32,
-    parameter  int unsigned NumRfReadPrts = 2,
+    // parameter  int unsigned NumRfReadPrts = 2,
     parameter  int unsigned OpWidth       = 3,
     parameter  int unsigned FormatWidth   = 3,
     parameter  int unsigned OpCodeWidth   = 7,
     parameter  int unsigned NumCfgRegs    = 6,
-    localparam int unsigned SizeLarge     = SysDataWidth / 2,
-    localparam int unsigned SizeSmall     = SysDataWidth / 4
+    localparam int unsigned SizeLarge     = SysDataWidth / 2
+    // localparam int unsigned SizeSmall     = SysDataWidth / 4
 ) (
     input  logic                            clk_i,
     input  logic                            rst_ni,

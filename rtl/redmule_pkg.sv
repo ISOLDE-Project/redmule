@@ -5,9 +5,7 @@
 // Yvan Tortorella <yvan.tortorella@unibo.it>
 //
 
-import fpnew_pkg::*;
-import hci_package::*;
-import hwpe_stream_package::*;
+
 
 package redmule_pkg;
 

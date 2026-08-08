@@ -80,9 +80,9 @@ logic [$clog2(Width):0]     y_rows_lftovr;
   logic [SysDataWidth-1:0] x_addr, w_addr, y_addr, z_addr;
 
   redmule_inst_decoder #(
-    .SysInstWidth       ( SysInstWidth       ),
-    .SysDataWidth       ( SysDataWidth       ),
-    .NumRfReadPrts      ( 3                  ) // FIXME: parametric
+    // .SysInstWidth       ( SysInstWidth       ),
+    // .SysDataWidth       ( SysDataWidth       ),
+    //.NumRfReadPrts      ( 3                  ) // FIXME: parametric
   ) i_inst_decoder      (
     .clk_i               ( clk_i               ),
     .rst_ni              ( rst_ni              ),
