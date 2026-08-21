@@ -66,17 +66,13 @@ addmin: check_penv
 	cd $(PENV);                               \
 	deactivate
 
-gemm: check_penv
+gemm: 
 	mkdir -p $@/txt;                          \
-	cd $(PENV);                               \
-	source ./bin/activate;                    \
 	cd $(CUR_DIR)/$(fp_fmt);                  \
 	python3 ./scripts/$@.py                   \
 	--m_size $(M) --n_size $(N) --k_size $(K) \
 	--inc_dir $(SW)                           \
-	--txt_dir $(CUR_DIR)/$@/txt;              \
-	cd $(PENV);                               \
-	deactivate
+	--txt_dir $(CUR_DIR)/$@/txt;              
 
 maxmin: check_penv
 	mkdir -p $@/txt;                          \
